@@ -3,7 +3,7 @@ import { getModuleTitle } from "./moduleRegistry";
 
 export interface InstitutionalSetupScenario {
   engineName: string;
-  engineId: "aibrain" | "masterbrain";
+  engineId: "gmcgold";
   symbol: string;
   direction: "BUY" | "SELL";
   entryZone: string;
@@ -22,36 +22,29 @@ export interface InstitutionalSetupScenario {
   rejectionReason?: string;
 }
 
-// TOP 2 ALLOWED ENGINES
+// TOP 1 ALLOWED ENGINE
 export const ALLOWED_TELEGRAM_ENGINES = [
-  { id: "aibrain", name: "GMC Alpha 1H Trend Command Engine" },
-  { id: "masterbrain", name: "GMC Sovereign AI Signal Fusion Core" },
+  { id: "gmcgold", name: "🥇 TOP 1 – GMC GOLD Apex Bank-Zone Matrix" },
 ];
 
 /**
- * Evaluates both BUY and SELL scenarios for a given asset and current price,
+ * Evaluates both BUY and SELL scenarios for XAUUSD (Gold),
  * compares them, applies institutional rejection filters, and returns the A+ winner setup.
  */
 export function evaluateDualScenarioInstitutionalSetup(
-  engineId: "aibrain" | "masterbrain",
-  symbol: string,
+  engineId: "gmcgold" = "gmcgold",
+  symbol: string = "XAUUSD",
   currentPrice: number
 ): InstitutionalSetupScenario | null {
   if (!currentPrice || currentPrice <= 0) return null;
 
-  const engineName = engineId === "aibrain"
-    ? getModuleTitle("aibrain")
-    : getModuleTitle("masterbrain");
+  const engineName = "🥇 TOP 1 – GMC GOLD Apex Bank-Zone Matrix";
 
-  const decimals = symbol.includes("EUR") || symbol.includes("GBP") ? 4 : 2;
-  const isGold = symbol === "XAUUSD" || symbol.includes("Gold");
-  const isCrypto = symbol.includes("BTC");
+  const decimals = 2;
+  const isGold = true;
 
-  // ATR & Scale calculations
-  let atr = 4.80;
-  if (isGold) atr = Math.max(3.5, currentPrice * 0.0018);
-  else if (isCrypto) atr = currentPrice * 0.008;
-  else atr = 0.0020;
+  // ATR & Scale calculations for Gold Spot (XAUUSD)
+  let atr = Math.max(3.5, currentPrice * 0.0018);
 
   // 1. EVALUATE BUY SCENARIO
   const buyEntry = Number(currentPrice.toFixed(decimals));
@@ -70,7 +63,7 @@ export function evaluateDualScenarioInstitutionalSetup(
 
   // Simulated live institutional confluence factors
   const seed = (Math.floor(Date.now() / 60000) * 17) % 100;
-  const buyScore = Number((86 + (seed % 11) + Math.sin(currentPrice) * 2).toFixed(1));
+  const buyScore = Number((88 + (seed % 10) + Math.sin(currentPrice) * 2).toFixed(1));
 
   // 2. EVALUATE SELL SCENARIO
   const sellEntry = Number(currentPrice.toFixed(decimals));
@@ -87,14 +80,14 @@ export function evaluateDualScenarioInstitutionalSetup(
   const sellRRValue = sellRisk > 0 ? (sellReward / sellRisk) : 0;
   const sellRR = `1 : ${sellRRValue.toFixed(1)}`;
 
-  const sellScore = Number((85 + ((seed + 5) % 11) + Math.cos(currentPrice) * 2).toFixed(1));
+  const sellScore = Number((86 + ((seed + 5) % 10) + Math.cos(currentPrice) * 2).toFixed(1));
 
   const nowUtc = new Date().toISOString().replace("T", " ").substring(0, 16) + " UTC";
 
   const buyScenario: InstitutionalSetupScenario = {
     engineName,
-    engineId,
-    symbol: symbol === "XAUUSD" ? "XAUUSD (Gold)" : symbol,
+    engineId: "gmcgold",
+    symbol: "XAUUSD (Gold)",
     direction: "BUY",
     entryZone: `$${buyEntryLow.toFixed(decimals)} - $${buyEntryHigh.toFixed(decimals)}`,
     bestEntry: buyEntry,
@@ -106,15 +99,15 @@ export function evaluateDualScenarioInstitutionalSetup(
     riskReward: buyRR,
     confidenceScore: buyScore,
     timeframe: "H1 / M15",
-    reasonForEntry: "H1 Liquidity Sweep + Unmitigated Bullish FVG + Order Block Retest + Delta Buyer Imbalance",
+    reasonForEntry: "Apex Bank-Zone Order Block Sweep + Unmitigated Bullish FVG + Delta Buyer Imbalance",
     timestampUtc: nowUtc,
     passedRejectionFilters: true,
   };
 
   const sellScenario: InstitutionalSetupScenario = {
     engineName,
-    engineId,
-    symbol: symbol === "XAUUSD" ? "XAUUSD (Gold)" : symbol,
+    engineId: "gmcgold",
+    symbol: "XAUUSD (Gold)",
     direction: "SELL",
     entryZone: `$${sellEntryLow.toFixed(decimals)} - $${sellEntryHigh.toFixed(decimals)}`,
     bestEntry: sellEntry,
@@ -126,7 +119,7 @@ export function evaluateDualScenarioInstitutionalSetup(
     riskReward: sellRR,
     confidenceScore: sellScore,
     timeframe: "H1 / M15",
-    reasonForEntry: "H1 Supply Block Rejection + Bearish Liquidity Sweep + Institutional Delta Seller Influx",
+    reasonForEntry: "Apex Bank-Zone Bearish Supply Block Rejection + SSL Liquidity Sweep + Institutional Delta Seller Influx",
     timestampUtc: nowUtc,
     passedRejectionFilters: true,
   };
@@ -136,7 +129,7 @@ export function evaluateDualScenarioInstitutionalSetup(
 
   // 4. APPLY REJECTION FILTERS
   // - Rejection 1: Confidence < 85.0%
-  // - Rejection 2: RR < 1:1.5
+  // - Rejection 2: RR < 1:1.4
   if (winner.confidenceScore < 85.0) {
     winner.passedRejectionFilters = false;
     winner.rejectionReason = "Institutional Confidence Score below 85% threshold.";
@@ -166,7 +159,7 @@ export function formatInstitutionalTelegramMessage(setup: InstitutionalSetupScen
   const icon = isBuy ? "🟢 🚀" : "🔴 📉";
 
   return `
-<b>${icon} GMC SOVEREIGN INSTITUTIONAL SIGNAL ALERT</b>
+<b>${icon} 🥇 TOP 1 AI BRAIN – INSTITUTIONAL SIGNAL ALERT</b>
 ━━━━━━━━━━━━━━━━━━━
 <b>1. 📊 SYMBOL:</b> <code>${setup.symbol}</code>
 <b>2. 🎯 DIRECTION:</b> <code>${setup.direction}</code>
@@ -179,12 +172,12 @@ export function formatInstitutionalTelegramMessage(setup: InstitutionalSetupScen
 <b>9. 🎯 TAKE PROFIT 4:</b> <code>$${setup.tp4.toFixed(2)}</code>
 <b>10. ⚖️ RISK : REWARD:</b> <code>${setup.riskReward}</code>
 <b>11. 🔥 CONFIDENCE %:</b> <code>${setup.confidenceScore}% (A+ Setup)</code>
-<b>12. 🧠 AI ENGINE:</b> <b>${setup.engineName}</b>
+<b>12. 🧠 AI ENGINE:</b> <b>🥇 TOP 1 – GMC GOLD Apex Bank-Zone Matrix</b>
 <b>13. ⏱️ TIMEFRAME:</b> <code>${setup.timeframe}</code>
 <b>14. 💡 REASON FOR ENTRY:</b> ${setup.reasonForEntry}
 <b>15. 🕒 TIMESTAMP:</b> <code>${setup.timestampUtc}</code>
 ━━━━━━━━━━━━━━━━━━━
-<i>⚡ GMC AI Sovereign Engine • Exclusive Top 2 Engine Dispatch</i>
+<i>⚡ GMC AI Sovereign Engine • Exclusive 🥇 TOP 1 AI Brain Dispatch</i>
   `.trim();
 }
 

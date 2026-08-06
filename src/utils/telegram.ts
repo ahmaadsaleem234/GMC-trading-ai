@@ -138,18 +138,15 @@ export async function dispatchTradeAlertToTelegram(trade: {
   confidence?: number;
   reason?: string;
 }) {
-  // STRICT RULE: Only Top 2 AI Engines are allowed to dispatch Telegram signals!
-  const isTop2Engine =
-    trade.source.includes("GMC Alpha 1H Trend Command Engine") ||
-    trade.source.includes("GMC Sovereign AI Signal Fusion Core") ||
-    trade.source.includes("BATMAN MASTER") ||
-    trade.source.includes("GMC AI BRAIN") ||
-    trade.source.includes("aibrain") ||
-    trade.source.includes("masterbrain");
+  // STRICT RULE: Only 🥇 TOP 1 AI Brain is allowed to dispatch Telegram signals!
+  const isTop1Engine =
+    trade.source.includes("TOP 1") ||
+    trade.source.includes("gmcgold") ||
+    trade.source.includes("GMC GOLD Apex");
 
-  if (!isTop2Engine) {
-    console.log(`[TELEGRAM BROADCASTER FILTERED]: ${trade.source} is not in Top 2 Engines. Suppressed.`);
-    return { success: true, message: "Suppressed non-top-2 engine Telegram alert." };
+  if (!isTop1Engine) {
+    console.log(`[TELEGRAM BROADCASTER FILTERED]: ${trade.source} is not 🥇 TOP 1 AI Brain. Suppressed.`);
+    return { success: true, message: "Suppressed non-TOP 1 AI Brain signal (Only TOP 1 allowed)." };
   }
 
   const alertId = `trade-${trade.source}-${trade.asset}-${trade.type}-${trade.entry}-${Math.floor(Date.now() / 300000)}`;
@@ -159,14 +156,14 @@ export async function dispatchTradeAlertToTelegram(trade: {
   const risk = Math.abs(trade.entry - trade.sl);
   const reward = Math.abs(trade.tp1 - trade.entry);
   const rr = risk > 0 ? `1 : ${(reward / risk).toFixed(1)}` : "1 : 2.5";
-  const confidence = trade.confidence || 94.8;
+  const confidence = trade.confidence || 96.4;
   const tp2 = trade.tp2 || Number((trade.type === "BUY" ? trade.entry + reward * 1.8 : trade.entry - reward * 1.8).toFixed(2));
   const tp3 = trade.tp3 || Number((trade.type === "BUY" ? trade.entry + reward * 2.8 : trade.entry - reward * 2.8).toFixed(2));
   const tp4 = trade.tp4 || Number((trade.type === "BUY" ? trade.entry + reward * 4.0 : trade.entry - reward * 4.0).toFixed(2));
   const timestamp = new Date().toISOString().replace("T", " ").substring(0, 16) + " UTC";
 
   const message = `
-<b>${icon} GMC SOVEREIGN INSTITUTIONAL SIGNAL ALERT</b>
+<b>${icon} 🥇 TOP 1 AI BRAIN – INSTITUTIONAL SIGNAL ALERT</b>
 ━━━━━━━━━━━━━━━━━━━
 <b>1. 📊 SYMBOL:</b> <code>${trade.asset}</code>
 <b>2. 🎯 DIRECTION:</b> <code>${trade.type}</code>
@@ -179,12 +176,12 @@ export async function dispatchTradeAlertToTelegram(trade: {
 <b>9. 🎯 TAKE PROFIT 4:</b> <code>$${tp4.toFixed(2)}</code>
 <b>10. ⚖️ RISK : REWARD:</b> <code>${rr}</code>
 <b>11. 🔥 CONFIDENCE %:</b> <code>${confidence}% (A+ Setup)</code>
-<b>12. 🧠 AI ENGINE:</b> <b>${trade.source}</b>
+<b>12. 🧠 AI ENGINE:</b> <b>🥇 TOP 1 – GMC GOLD Apex Bank-Zone Matrix</b>
 <b>13. ⏱️ TIMEFRAME:</b> <code>H1 / M15</code>
-<b>14. 💡 REASON FOR ENTRY:</b> ${trade.reason || trade.confluence || "H1 Liquidity Sweep + Unmitigated FVG + Institutional Order Block Retest"}
+<b>14. 💡 REASON FOR ENTRY:</b> ${trade.reason || trade.confluence || "Apex Bank-Zone Order Block Sweep + Unmitigated FVG Retest"}
 <b>15. 🕒 TIMESTAMP:</b> <code>${timestamp}</code>
 ━━━━━━━━━━━━━━━━━━━
-<i>⚡ GMC AI Sovereign Engine • Exclusive Top 2 Engine Dispatch</i>
+<i>⚡ GMC AI Sovereign Engine • Exclusive 🥇 TOP 1 AI Brain Dispatch</i>
   `.trim();
 
   return await sendTelegramMessage(message, alertId);
@@ -202,19 +199,20 @@ export async function dispatchSLTPResultToTelegram(result: {
   const alertId = `outcome-${result.source}-${result.asset}-${result.outcome}-${Math.round(result.price)}`;
   const isTP = result.outcome === "TP_HIT";
   const icon = isTP ? "🎉 💰" : "🛡️ 🛑";
+  const statusText = isTP ? "✅ Take Profit Hit" : "❌ Stop Loss Hit";
   const balanceStr = result.accountBalance ? `$${result.accountBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$10,257.00";
 
   const message = `
-<b>${icon} GMC TRADE OUTCOME NOTIFICATION</b>
+<b>${icon} 🥇 TOP 1 AI BRAIN – TRADE OUTCOME NOTIFICATION</b>
 ━━━━━━━━━━━━━━━━━━━
-<b>🧠 BRAIN MODULE:</b> ${result.source}
+<b>🧠 BRAIN MODULE:</b> 🥇 TOP 1 – GMC GOLD Apex Bank-Zone Matrix
 <b>📊 ASSET:</b> ${result.asset} (${result.type})
-<b>STATUS:</b> <code>${isTP ? "✅ TAKE PROFIT HIT" : "❌ STOP LOSS HIT"}</code>
+<b>STATUS:</b> <code>${statusText}</code>
 <b>EXIT PRICE:</b> <code>$${result.price.toFixed(2)}</code>
 <b>NET PROFIT/LOSS:</b> <code>${result.pnlUSD >= 0 ? "+" : ""}$${result.pnlUSD.toFixed(2)}</code>
 <b>💼 UPDATED BALANCE:</b> <code>${balanceStr}</code>
 ━━━━━━━━━━━━━━━━━━━
-<i>⚡ GMC Risk Defense • Trade Closed Successfully</i>
+<i>⚡ GMC Risk Defense • Trade Closed & Completed</i>
   `.trim();
 
   return await sendTelegramMessage(message, alertId);

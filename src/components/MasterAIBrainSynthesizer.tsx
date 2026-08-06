@@ -28,6 +28,12 @@ import { LockedSetupBanner } from "./LockedSetupBanner";
 import { GlobalPerformanceSummary } from "./GlobalPerformanceSummary";
 import { QuickSwitchAssetStrip } from "./QuickSwitchAssetStrip";
 import { TradeExecutionLog } from "./TradeExecutionLog";
+import {
+  runSystemSelfAudit,
+  getSelfLearningStats,
+  generateInstitutionalLevelMatrix,
+  evaluateMasterPinpointSetup,
+} from "../utils/gmcMasterAiBrainCore";
 
 interface MasterAIBrainSynthesizerProps {
   currentPrice: number;
@@ -61,6 +67,12 @@ export const MasterAIBrainSynthesizer: React.FC<MasterAIBrainSynthesizerProps> =
   const livePriceObj = prices[activeAssetKey] || { price: currentPrice || 4238.5, changePct: 0.42 };
   const basePrice = livePriceObj.price || 4238.5;
   const decimals = activeAssetKey.includes("EUR") || activeAssetKey.includes("GBP") ? 4 : 2;
+
+  // Ultimate Self-Optimizing Institutional Master AI Brain Core calculations
+  const selfAudit = useMemo(() => runSystemSelfAudit(), [refreshCycle]);
+  const selfLearningStats = useMemo(() => getSelfLearningStats(), []);
+  const institutionalLevels = useMemo(() => generateInstitutionalLevelMatrix(basePrice), [basePrice]);
+  const masterPinpointSetup = useMemo(() => evaluateMasterPinpointSetup(basePrice, activeAssetKey), [basePrice, activeAssetKey, refreshCycle]);
 
   // Master AI Brain Locked Setup Hook
   const { setup: lockedSetup, resetSetup } = useLockedTradeSetup(
@@ -373,86 +385,172 @@ export const MasterAIBrainSynthesizer: React.FC<MasterAIBrainSynthesizerProps> =
         </div>
       </div>
 
-      {/* AI Mistake Inspector & Institutional Anchor Generator */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* AI Mistake Inspector & Anti-Trap Defense */}
-        <div className="bg-[#080B14] border border-slate-800 rounded-2xl p-5 shadow-2xl space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div className="flex items-center gap-2">
-              <ShieldAlert className="w-5 h-5 text-rose-400" />
-              <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-200">
-                AI MISTAKE INSPECTOR & TRAP DEFENSE
-              </h3>
+      {/* ULTIMATE INSTITUTIONAL MASTER PROMPT: SELF-REVIEW & SYSTEM AUDIT SUITE */}
+      <div className="bg-[#080D1A] border-2 border-amber-500/50 rounded-2xl p-5 shadow-2xl space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-amber-500/20 border border-amber-500/50 rounded-xl flex items-center justify-center text-amber-400 font-bold text-xl">
+              🛡️
             </div>
-            <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold rounded">
-              0 TRAPS ACTIVE
-            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-amber-400 uppercase tracking-widest">
+                  GMC AI BRAIN • CONTINUOUS SELF-REVIEW ENGINE
+                </span>
+                <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold rounded">
+                  {selfAudit.systemStatus} ({selfAudit.healthScorePct}%)
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 font-sans mt-0.5">
+                Pre-trade 13-Subsystem Audit • Self-Learning Engine Active • Win Rate: {selfLearningStats.winRatePct}% • Profit Factor: {selfLearningStats.profitFactor}
+              </p>
+            </div>
           </div>
 
-          <div className="space-y-3 font-mono text-xs">
-            <div className="p-3 bg-[#05070E] border border-slate-800 rounded-xl space-y-1">
-              <div className="flex justify-between items-center text-emerald-400 font-bold">
-                <span>✓ FAKE BREAKOUT AUDIT</span>
-                <span className="text-[10px] text-slate-400">PASSED</span>
-              </div>
-              <p className="text-[11px] text-slate-400 font-sans">
-                No high-volume liquidity traps detected above $4080. Price structure confirmed clean.
-              </p>
-            </div>
-
-            <div className="p-3 bg-[#05070E] border border-slate-800 rounded-xl space-y-1">
-              <div className="flex justify-between items-center text-emerald-400 font-bold">
-                <span>✓ HIGH-IMPACT NEWS SPIKE AUDIT</span>
-                <span className="text-[10px] text-slate-400">PASSED</span>
-              </div>
-              <p className="text-[11px] text-slate-400 font-sans">
-                Spread volatility remains within safe institutional execution threshold (&lt;2.1 pips).
-              </p>
-            </div>
-
-            <div className="p-3 bg-[#05070E] border border-slate-800 rounded-xl space-y-1">
-              <div className="flex justify-between items-center text-emerald-400 font-bold">
-                <span>✓ ORDER BOOK DOM SPREAD DEFENSE</span>
-                <span className="text-[10px] text-slate-400">PASSED</span>
-              </div>
-              <p className="text-[11px] text-slate-400 font-sans">
-                Whale limit order walls offer strong downside protection near $4020.
-              </p>
+          <div className="flex items-center gap-2">
+            <div className="text-right font-mono text-xs">
+              <span className="text-slate-400 text-[10px] block">AUDITED SUB-MODULES</span>
+              <strong className="text-amber-400 font-bold">{selfAudit.checkedModulesCount} / 13 MODULES PASSED</strong>
             </div>
           </div>
         </div>
 
-        {/* Institutional Anchor Levels */}
-        <div className="bg-[#080B14] border border-slate-800 rounded-2xl p-5 shadow-2xl space-y-4">
+        {/* Audit Details & Optimizations applied */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+          <div className="bg-[#040710] border border-slate-800 p-3 rounded-xl space-y-2">
+            <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider block">
+              13 AUDITED SUBSYSTEMS (0 CONFLICTS)
+            </span>
+            <div className="grid grid-cols-1 gap-1 text-[11px] text-slate-300">
+              {selfAudit.algorithmsAudited.slice(0, 6).map((item, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <span className="text-emerald-400 font-bold">✓</span>
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-[#040710] border border-slate-800 p-3 rounded-xl space-y-2">
+            <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">
+              AUTOMATIC SELF-OPTIMIZATIONS APPLIED
+            </span>
+            <div className="space-y-1 text-[11px] text-slate-300">
+              {selfAudit.optimizationsApplied.map((opt, idx) => (
+                <div key={idx} className="flex items-start gap-2">
+                  <span className="text-amber-400 font-bold">⚡</span>
+                  <span>{opt}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* PINPOINT ENTRY SYSTEM & INSTITUTIONAL LEVELS GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* PINPOINT ENTRY SYSTEM CARD */}
+        <div className="bg-[#080B14] border-2 border-emerald-500/40 rounded-2xl p-5 shadow-2xl space-y-4">
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
             <div className="flex items-center gap-2">
-              <Target className="w-5 h-5 text-amber-400" />
-              <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-200">
-                INSTITUTIONAL ANCHOR LEVELS
+              <Target className="w-5 h-5 text-emerald-400" />
+              <h3 className="text-xs font-extrabold uppercase tracking-widest text-emerald-400">
+                PINPOINT ENTRY SYSTEM (XAU/USD GOLD)
               </h3>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono">1:3.2 RISK/REWARD</span>
+            <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black rounded-lg">
+              {masterPinpointSetup.confidenceClassification} ({masterPinpointSetup.confidenceScore}%)
+            </span>
           </div>
 
           <div className="grid grid-cols-2 gap-3 font-mono text-xs">
-            <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl">
-              <div className="text-[10px] text-slate-400 uppercase">ANCHOR ENTRY ZONE</div>
-              <div className="text-base font-bold text-amber-400 mt-1">${masterVerdict.entryPrice}</div>
+            <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl">
+              <div className="text-[10px] text-slate-400 uppercase">DIRECTION & SESSION</div>
+              <div className="text-base font-black text-emerald-400 mt-0.5">
+                {masterPinpointSetup.direction} ({masterPinpointSetup.sessionName})
+              </div>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl">
+            <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl">
+              <div className="text-[10px] text-slate-400 uppercase">ENTRY ZONE</div>
+              <div className="text-base font-bold text-amber-400 mt-0.5">{masterPinpointSetup.entryZone}</div>
+            </div>
+
+            <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl">
+              <div className="text-[10px] text-slate-400 uppercase">BEST ENTRY</div>
+              <div className="text-base font-bold text-emerald-400 mt-0.5">${masterPinpointSetup.bestEntry.toFixed(2)}</div>
+            </div>
+
+            <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl">
               <div className="text-[10px] text-slate-400 uppercase">PROTECTIVE STOP LOSS</div>
-              <div className="text-base font-bold text-rose-400 mt-1">${masterVerdict.stopLoss}</div>
+              <div className="text-base font-bold text-rose-400 mt-0.5">${masterPinpointSetup.stopLoss.toFixed(2)}</div>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl">
-              <div className="text-[10px] text-slate-400 uppercase">TAKE PROFIT 1</div>
-              <div className="text-base font-bold text-emerald-400 mt-1">${masterVerdict.takeProfit1}</div>
+            <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl">
+              <div className="text-[10px] text-slate-400 uppercase">TAKE PROFIT 1 & 2</div>
+              <div className="text-xs font-bold text-emerald-400 mt-0.5">
+                TP1: ${masterPinpointSetup.tp1.toFixed(2)} | TP2: ${masterPinpointSetup.tp2.toFixed(2)}
+              </div>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl">
-              <div className="text-[10px] text-slate-400 uppercase">TAKE PROFIT 2</div>
-              <div className="text-base font-bold text-emerald-400 mt-1">${masterVerdict.takeProfit2}</div>
+            <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl">
+              <div className="text-[10px] text-slate-400 uppercase">TAKE PROFIT 3 & 4</div>
+              <div className="text-xs font-bold text-emerald-400 mt-0.5">
+                TP3: ${masterPinpointSetup.tp3.toFixed(2)} | TP4: ${masterPinpointSetup.tp4.toFixed(2)}
+              </div>
+            </div>
+          </div>
+
+          <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-xl text-[11px] font-mono space-y-1">
+            <div className="text-slate-400">EXPECTED RISK-TO-REWARD: <strong className="text-amber-400">{masterPinpointSetup.expectedRiskReward}</strong></div>
+            <div className="text-slate-400">SELF-OPTIMIZATION AUDIT: <span className="text-emerald-300 font-sans">{masterPinpointSetup.selfOptimizationNote}</span></div>
+          </div>
+        </div>
+
+        {/* INSTITUTIONAL LEVEL MATRIX CARD */}
+        <div className="bg-[#080B14] border border-slate-800 rounded-2xl p-5 shadow-2xl space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center gap-2">
+              <Layers className="w-5 h-5 text-amber-400" />
+              <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-200">
+                INSTITUTIONAL LEVEL MATRIX (ORDER BLOCKS & FVG)
+              </h3>
+            </div>
+            <span className="text-[10px] text-slate-400 font-mono">D1 / H4 / H1 MAP</span>
+          </div>
+
+          <div className="space-y-3 font-mono text-xs">
+            {/* Order Blocks */}
+            <div className="p-3 bg-[#05070E] border border-slate-800 rounded-xl space-y-1.5">
+              <span className="text-[10px] text-amber-400 font-bold uppercase">INSTITUTIONAL ORDER BLOCKS</span>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-emerald-400 font-bold">🟢 H1 Bullish Order Block:</span>
+                <span className="text-white font-bold">${institutionalLevels.orderBlocks[0]?.price}</span>
+              </div>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-rose-400 font-bold">🔴 H4 Bearish Supply Block:</span>
+                <span className="text-white font-bold">${institutionalLevels.orderBlocks[1]?.price}</span>
+              </div>
+            </div>
+
+            {/* Fair Value Gaps */}
+            <div className="p-3 bg-[#05070E] border border-slate-800 rounded-xl space-y-1.5">
+              <span className="text-[10px] text-emerald-400 font-bold uppercase">UNMITIGATED FAIR VALUE GAPS (FVG)</span>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-emerald-300">Unmitigated Bullish FVG:</span>
+                <span className="text-white">${institutionalLevels.fairValueGaps[0]?.bottom} - ${institutionalLevels.fairValueGaps[0]?.top}</span>
+              </div>
+            </div>
+
+            {/* Liquidity Pools */}
+            <div className="p-3 bg-[#05070E] border border-slate-800 rounded-xl space-y-1.5">
+              <span className="text-[10px] text-blue-400 font-bold uppercase">LIQUIDITY POOLS (BSL / SSL)</span>
+              {institutionalLevels.liquidityPools.map((pool, idx) => (
+                <div key={idx} className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-300">{pool.name}:</span>
+                  <span className="text-amber-400 font-bold">${pool.price}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>

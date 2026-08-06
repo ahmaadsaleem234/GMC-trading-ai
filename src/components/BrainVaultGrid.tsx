@@ -53,10 +53,20 @@ export const BrainVaultGrid: React.FC<BrainVaultGridProps> = ({
 
   const topTools = [
     {
+      id: "gmcgold",
+      title: "🥇 TOP 1 – GMC GOLD Apex Bank-Zone Matrix",
+      emoji: "🥇",
+      tag: "TOP 1 APEX BANK-ZONE",
+      tagColor: "bg-amber-400/30 text-amber-300 border-amber-400/80 shadow-[0_0_16px_rgba(234,179,8,0.6)] animate-pulse",
+      desc: "Top #1 Apex Bank-Zone liquidity matrix, Gold institutional order blocks & zone maps with live trade execution",
+      tabTarget: "gmcgold",
+      highlight: true,
+    },
+    {
       id: "gmccap",
-      title: "GMC Alpha 1H Trend Command Engine",
-      emoji: "⚡",
-      tag: "ALPHA H1 COMMAND",
+      title: "🥈 TOP 2 – GMC Alpha 1H Trend Command Engine",
+      emoji: "🥈",
+      tag: "TOP 2 ALPHA H1 COMMAND",
       tagColor: "bg-amber-400/20 text-amber-300 border-amber-400/60 shadow-[0_0_12px_rgba(234,179,8,0.4)]",
       desc: "The supreme 1-Hour H1 Timeframe AI Brain Master — High precision institutional H1 zone matrix with live trade execution, supply/demand maps & scenarios",
       tabTarget: "gmccap",
@@ -68,7 +78,7 @@ export const BrainVaultGrid: React.FC<BrainVaultGridProps> = ({
       emoji: "⚔️",
       tag: "REVERSAL RADAR",
       tagColor: "bg-amber-500/20 text-amber-300 border-amber-500/40",
-      desc: "Top 1 AI Master matrix synthesizing M15 order block sweeps with 99.1% Win Rate for Gold & BTC",
+      desc: "Top AI Master matrix synthesizing M15 order block sweeps with 99.1% Win Rate for Gold & BTC",
       tabTarget: "harami",
       highlight: true,
     },

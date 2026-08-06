@@ -29,7 +29,7 @@ export const InstitutionalTelegramBroadcaster: React.FC<InstitutionalTelegramBro
         // Send at most once every 10 minutes per engine/asset to prevent spamming
         if (now - lastSent > 600000) {
           const setup = evaluateDualScenarioInstitutionalSetup(
-            engine.id as "aibrain" | "masterbrain",
+            "gmcgold",
             assetKey,
             currentPrice
           );
@@ -39,11 +39,11 @@ export const InstitutionalTelegramBroadcaster: React.FC<InstitutionalTelegramBro
             dispatchInstitutionalSignalToTelegram(setup)
               .then((res) => {
                 if (res.success) {
-                  console.log(`[TELEGRAM TOP 2 DISPATCH SUCCESS]: ${setup.engineName} dispatched ${setup.direction} signal for ${setup.symbol}`);
+                  console.log(`[TELEGRAM TOP 1 DISPATCH SUCCESS]: ${setup.engineName} dispatched ${setup.direction} signal for ${setup.symbol}`);
                 }
               })
               .catch((err) => {
-                console.error("[TELEGRAM TOP 2 DISPATCH ERROR]:", err);
+                console.error("[TELEGRAM TOP 1 DISPATCH ERROR]:", err);
               });
           }
         }

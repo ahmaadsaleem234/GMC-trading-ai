@@ -134,7 +134,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             title="Launch Top #1 GMC Gold Apex Bank Zone Matrix"
           >
             <Crown className="w-4 h-4 text-amber-300" />
-            <span>TOP #1 APEX ZONE</span>
+            <span>🥇 TOP 1 APEX ZONE</span>
           </button>
         </div>
 

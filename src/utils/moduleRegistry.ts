@@ -31,13 +31,23 @@ export interface ModuleRegistryItem {
 export const MODULE_REGISTRY: ModuleRegistryItem[] = [
   {
     id: "gmcgold",
-    label: "👑 GMC GOLD Apex Bank-Zone Matrix (TOP #1)",
+    label: "🥇 TOP 1 – GMC GOLD Apex Bank-Zone Matrix",
     icon: Crown,
     category: "Core",
     desc: "Top #1 Apex Bank-Zone liquidity matrix, Gold institutional order blocks & zone maps",
-    emoji: "👑",
-    tag: "TOP #1 APEX BANK-ZONE",
+    emoji: "🥇",
+    tag: "TOP 1 APEX BANK-ZONE",
     tagColor: "bg-amber-400/30 text-amber-300 border-amber-400/80 shadow-[0_0_16px_rgba(234,179,8,0.6)] animate-pulse",
+  },
+  {
+    id: "gmccap",
+    label: "🥈 TOP 2 – GMC Alpha 1H Trend Command Engine",
+    icon: Cpu,
+    category: "Core",
+    desc: "1-Hour H1 trend command engine with high precision institutional zones",
+    emoji: "🥈",
+    tag: "TOP 2 ALPHA H1 COMMAND",
+    tagColor: "bg-amber-400/20 text-amber-300 border-amber-400/60 shadow-[0_0_12px_rgba(234,179,8,0.4)]",
   },
   {
     id: "landing",
@@ -58,16 +68,6 @@ export const MODULE_REGISTRY: ModuleRegistryItem[] = [
     emoji: "🔥",
     tag: "D3 HEATMAP",
     tagColor: "bg-amber-500/20 text-amber-300 border-amber-500/40",
-  },
-  {
-    id: "gmccap",
-    label: "⚡ GMC Alpha 1H Trend Command Engine",
-    icon: Cpu,
-    category: "Core",
-    desc: "1-Hour H1 trend command engine with high precision institutional zones",
-    emoji: "⚡",
-    tag: "ALPHA H1 COMMAND",
-    tagColor: "bg-amber-400/20 text-amber-300 border-amber-400/60 shadow-[0_0_12px_rgba(234,179,8,0.4)]",
   },
   {
     id: "harami",

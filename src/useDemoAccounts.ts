@@ -23,7 +23,7 @@ export interface TabDemoAccount {
 export const INITIAL_TAB_DEMO_ACCOUNTS: Record<string, TabDemoAccount> = {
   gmcgold: {
     tabId: "gmcgold",
-    tabLabel: "👑 GMC GOLD Apex Bank-Zone Matrix",
+    tabLabel: "🥇 TOP 1 – GMC GOLD Apex Bank-Zone Matrix",
     badge: "GOLD APEX ZONE",
     initialBalance: 5000,
     balance: 5950.00,
@@ -55,7 +55,7 @@ export const INITIAL_TAB_DEMO_ACCOUNTS: Record<string, TabDemoAccount> = {
   },
   gmccap: {
     tabId: "gmccap",
-    tabLabel: "⚡ GMC Alpha 1H Trend Command Engine",
+    tabLabel: "🥈 TOP 2 – GMC Alpha 1H Trend Command Engine",
     badge: "ALPHA H1 COMMAND",
     initialBalance: 5000,
     balance: 5890.00,

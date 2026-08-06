@@ -14,7 +14,7 @@ import { fetchLiveGoldPrice } from "./services/goldApiService";
 export interface ActiveTelegramSignal {
   id: string;
   source: string;
-  asset: "XAUUSD" | "BTCUSD";
+  asset: "XAUUSD";
   type: "BUY" | "SELL";
   entry: number;
   sl: number;
@@ -28,15 +28,14 @@ export interface ActiveTelegramSignal {
   createdAt: number;
 }
 
-const ACTIVE_TRADE_KEY = "gmc_master_active_signal_v3";
-const BALANCE_KEY = "gmc_master_balance_v3";
-const LAST_CLOSED_KEY = "gmc_master_last_closed_v3";
+const ACTIVE_TRADE_KEY = "gmc_master_active_signal_v4";
+const BALANCE_KEY = "gmc_master_balance_v4";
+const LAST_CLOSED_KEY = "gmc_master_last_closed_v4";
 
 export function useAutoTelegramBroadcaster() {
   const activeTradeRef = useRef<ActiveTelegramSignal | null>(null);
   const balanceRef = useRef<number>(10240.50);
   const isProcessingRef = useRef<boolean>(false);
-  const assetToggleRef = useRef<number>(0);
 
   useEffect(() => {
     // 1. Restore balance from storage
@@ -60,69 +59,56 @@ export function useAutoTelegramBroadcaster() {
     }
 
     // 3. Send initial startup welcome message once per browser session
-    const startupSent = sessionStorage.getItem("gmc_auto_telegram_init_v10");
+    const startupSent = sessionStorage.getItem("gmc_auto_telegram_init_v11");
     if (!startupSent) {
-      sessionStorage.setItem("gmc_auto_telegram_init_v10", "true");
+      sessionStorage.setItem("gmc_auto_telegram_init_v11", "true");
 
       const initMessage = `
-<b>👑 GMC SOVEREIGN AI BRAIN TELEGRAM BOT ONLINE</b>
+<b>🥇 TOP 1 AI BRAIN TELEGRAM BOT ONLINE (NO SPAM MODE)</b>
 ━━━━━━━━━━━━━━━━━━━
-<b>STATUS:</b> <code>REAL-TIME DUAL-SCENARIO MARKET MONITORING</code>
-<b>TOP 2 ENGINES ACTIVE:</b>
-• 1. ${getModuleTitle("aibrain")}
-• 2. ${getModuleTitle("masterbrain")}
-<b>SCENARIO EVALUATION:</b> <code>BUY vs SELL Confidence Comparison (A+ Trade Only)</code>
+<b>STATUS:</b> <code>STRICT SINGLE-TRADE REAL-TIME MONITORING</code>
+<b>EXCLUSIVE SIGNAL ENGINE:</b>
+• 🥇 TOP 1 – GMC GOLD Apex Bank-Zone Matrix
+<b>COVERED INSTRUMENT:</b> Gold Spot (XAUUSD)
+<b>MAX ACTIVE TRADES:</b> <code>1 Trade Maximum (No Spam / No Overlap)</code>
 <b>STRICT LOT SIZE:</b> <code>0.01 LOT</code>
-<b>COVERED ASSETS:</b> Gold (XAUUSD) & Crypto (BTCUSD)
 
-<i>⚡ Dual-scenario institutional evaluation active! Only the higher probability setup with >=85% confidence is published.</i>
+<i>⚡ No Spam Mode Active: Channel receives signals exclusively from 🥇 TOP 1 AI Brain. Next trade dispatches only after the current trade hits TP or SL.</i>
       `.trim();
 
-      sendTelegramMessage(initMessage, "init-welcome-v10").catch(() => {});
+      sendTelegramMessage(initMessage, "init-welcome-v11").catch(() => {});
     }
 
-    // Helper: Fetch real-time price using dedicated Gold API or Binance for Crypto
-    async function fetchLivePrice(asset: "XAUUSD" | "BTCUSD"): Promise<number | null> {
+    // Helper: Fetch real-time price using dedicated Gold API
+    async function fetchLivePrice(): Promise<number | null> {
       try {
-        if (asset === "XAUUSD") {
-          const goldQuote = await fetchLiveGoldPrice();
-          if (goldQuote && goldQuote.price) return goldQuote.price;
-        } else {
-          const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT`);
-          if (res.ok) {
-            const json = await res.json();
-            if (json && json.price) {
-              const price = parseFloat(json.price);
-              if (!isNaN(price) && price > 0) return price;
-            }
-          }
-        }
+        const goldQuote = await fetchLiveGoldPrice();
+        if (goldQuote && goldQuote.price) return goldQuote.price;
       } catch (err) {
-        console.warn(`[GMC AI Brain] Price fetch error for ${asset}:`, err);
+        console.warn(`[GMC AI Brain] Price fetch error for Gold:`, err);
       }
       return null;
     }
 
-    // Helper: Generate and broadcast dual-scenario setup for Top 2 Engines
+    // Helper: Generate and broadcast signal strictly for 🥇 TOP 1 AI Brain
     async function generateNewSignal() {
       const config = getTelegramConfig();
       if (!config.enabled) return;
 
-      const asset: "XAUUSD" | "BTCUSD" = assetToggleRef.current % 2 === 0 ? "XAUUSD" : "BTCUSD";
-      const engineId: "aibrain" | "masterbrain" = assetToggleRef.current % 4 < 2 ? "aibrain" : "masterbrain";
-      assetToggleRef.current += 1;
+      // STRICT LOCK: Never generate if there is already an active trade
+      if (activeTradeRef.current) return;
 
-      const livePrice = await fetchLivePrice(asset);
+      const livePrice = await fetchLivePrice();
       if (!livePrice) return;
 
-      // CONTINUOUS DUAL-SCENARIO ANALYSIS: BUY vs SELL
-      const setup = evaluateDualScenarioInstitutionalSetup(engineId, asset, livePrice);
+      // CONTINUOUS DUAL-SCENARIO ANALYSIS FOR 🥇 TOP 1 AI BRAIN
+      const setup = evaluateDualScenarioInstitutionalSetup("gmcgold", "XAUUSD", livePrice);
       if (!setup || !setup.passedRejectionFilters) return;
 
       const newTrade: ActiveTelegramSignal = {
-        id: `master-${Date.now()}`,
-        source: setup.engineName,
-        asset,
+        id: `gmcgold-${Date.now()}`,
+        source: "🥇 TOP 1 – GMC GOLD Apex Bank-Zone Matrix",
+        asset: "XAUUSD",
         type: setup.direction,
         entry: setup.bestEntry,
         sl: setup.stopLoss,
@@ -136,10 +122,11 @@ export function useAutoTelegramBroadcaster() {
         createdAt: Date.now(),
       };
 
+      // LOCK TRADE BEFORE BROADCASTING
       activeTradeRef.current = newTrade;
       localStorage.setItem(ACTIVE_TRADE_KEY, JSON.stringify(newTrade));
 
-      // Broadcast complete 15-field institutional Telegram signal
+      // Broadcast single entry signal
       await dispatchInstitutionalSignalToTelegram(setup);
     }
 
@@ -156,11 +143,13 @@ export function useAutoTelegramBroadcaster() {
           const lastClosedTime = lastClosedStr ? parseInt(lastClosedStr, 10) : 0;
           const elapsedSinceClose = Date.now() - lastClosedTime;
 
-          if (elapsedSinceClose >= 45000) {
+          // Search for new setup after cooldown (30 seconds)
+          if (elapsedSinceClose >= 30000) {
             await generateNewSignal();
           }
         } else {
-          const currentPrice = await fetchLivePrice(active.asset);
+          // Monitor active trade internally (no duplicate alerts sent while running)
+          const currentPrice = await fetchLivePrice();
           if (currentPrice !== null) {
             let isTP = false;
             let isSL = false;
@@ -176,23 +165,17 @@ export function useAutoTelegramBroadcaster() {
             if (isTP || isSL) {
               const outcome: "TP_HIT" | "SL_HIT" = isTP ? "TP_HIT" : "SL_HIT";
               
-              let pnlUSD = 0;
-              if (active.asset === "XAUUSD") {
-                pnlUSD = active.type === "BUY"
-                  ? (currentPrice - active.entry) * 1.0
-                  : (active.entry - currentPrice) * 1.0;
-              } else {
-                pnlUSD = active.type === "BUY"
-                  ? (currentPrice - active.entry) * 0.01
-                  : (active.entry - currentPrice) * 0.01;
-              }
+              let pnlUSD = active.type === "BUY"
+                ? (currentPrice - active.entry) * 1.0
+                : (active.entry - currentPrice) * 1.0;
               pnlUSD = Number(pnlUSD.toFixed(2));
 
               balanceRef.current = Number((balanceRef.current + pnlUSD).toFixed(2));
               localStorage.setItem(BALANCE_KEY, balanceRef.current.toString());
 
+              // Single outcome alert on completion
               await dispatchSLTPResultToTelegram({
-                source: active.source,
+                source: "🥇 TOP 1 – GMC GOLD Apex Bank-Zone Matrix",
                 asset: active.asset,
                 type: active.type,
                 outcome,
@@ -201,6 +184,7 @@ export function useAutoTelegramBroadcaster() {
                 accountBalance: balanceRef.current,
               });
 
+              // UNLOCK: Mark completed and allow next setup after cooldown
               activeTradeRef.current = null;
               localStorage.removeItem(ACTIVE_TRADE_KEY);
               localStorage.setItem(LAST_CLOSED_KEY, Date.now().toString());
