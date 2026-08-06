@@ -6,13 +6,21 @@ import {
   CheckCircle2,
   Search,
   Sliders,
+  Shield,
+  Activity,
+  Zap,
+  Sparkles,
 } from "lucide-react";
+import { LiveGoldMarketCard } from "./LiveGoldMarketCard";
+import { LivePrice } from "../types";
 
 interface BrainVaultGridProps {
   onSelectTab: (tabId: string) => void;
   isLoggedIn: boolean;
   loggedInUser: string | null;
   onOpenLoginModal: () => void;
+  prices?: Record<string, LivePrice>;
+  currentPrice?: number;
 }
 
 export const BrainVaultGrid: React.FC<BrainVaultGridProps> = ({
@@ -20,9 +28,18 @@ export const BrainVaultGrid: React.FC<BrainVaultGridProps> = ({
   isLoggedIn,
   loggedInUser,
   onOpenLoginModal,
+  prices = {},
+  currentPrice = 4238.5,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("ALL");
+
+  // Display user name safely from authenticated account
+  const displayUsername = loggedInUser
+    ? loggedInUser.includes("Ahmed") || loggedInUser === "Ahmed"
+      ? "Ahmed (Admin)"
+      : loggedInUser
+    : "Ahmed (Admin)";
 
   const categories = [
     { id: "ALL", label: "SHOW ALL" },
@@ -33,6 +50,7 @@ export const BrainVaultGrid: React.FC<BrainVaultGridProps> = ({
     { id: "VOLUME", label: "VOLUME BASED" },
     { id: "FORECASTING", label: "FORECASTING" },
   ];
+
   const topTools = [
     {
       id: "gmccap",
@@ -127,7 +145,7 @@ export const BrainVaultGrid: React.FC<BrainVaultGridProps> = ({
       emoji: "🦁",
       tag: "VANGUARD FUSION",
       tagColor: "bg-amber-500/20 text-amber-300 border-amber-500/40",
-      desc: "5-system ensemble: Command + AI Chains + BTL zones + Meer safety + Snake timing",
+      desc: "5-system ensemble: Command + AI Chains + GMC zones + Meer safety + Snake timing",
       tabTarget: "aimaster",
     },
     {
@@ -355,18 +373,7 @@ export const BrainVaultGrid: React.FC<BrainVaultGridProps> = ({
       desc: "Set custom price alerts for key order blocks, liquidity sweeps, and breakout triggers",
       tabTarget: "alerts",
     },
-    {
-      id: "vault",
-      title: "GMC Master Brain Vault Hub",
-      emoji: "🏰",
-      tag: "BRAIN VAULT",
-      tagColor: "bg-amber-500/20 text-amber-300 border-amber-500/40",
-      desc: "Central command vault housing all 35 GMC AI trading modules and intelligence engines",
-      tabTarget: "vault",
-    },
   ];
-
-  const userId = isLoggedIn ? (loggedInUser || "AHMED") : "48e4ad7f";
 
   // Filter tools based on search and selected category
   const filteredTools = topTools.filter((tool) => {
@@ -425,134 +432,98 @@ export const BrainVaultGrid: React.FC<BrainVaultGridProps> = ({
   return (
     <div
       id="brain-vault-grid"
-      className="space-y-8 pb-16 font-sans text-slate-200 max-w-7xl mx-auto px-3 sm:px-6"
+      className="space-y-6 pb-20 font-sans text-slate-200 max-w-7xl mx-auto px-3 sm:px-6"
     >
-      {/* 3D BRAIN VAULT HUB BANNER */}
-      <div className="card-3d-gold rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden text-center sm:text-left border border-amber-500/30">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-amber-500/20 pb-6">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-amber-400 via-amber-600 to-amber-900 border border-amber-300/60 rounded-2xl flex items-center justify-center text-3xl shadow-[0_0_20px_rgba(245,158,11,0.4)]">
-              🏰
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-gradient-gold uppercase tracking-tight flex items-center gap-2">
-                GMC 3D BRAIN VAULT HUB
-              </h1>
-              <div className="text-xs text-amber-200/80 font-mono tracking-wider uppercase mt-1">
-                INSTITUTIONAL QUANT SUITE • ALL 35 AI TRADING MODULES &amp; TOOLS
+      {/* MAIN DASHBOARD HEADER & USER WELCOME CARD */}
+      <div className="bg-gradient-to-r from-[#0D1117] via-[#070A10] to-[#0D1117] border border-[#D4AF37]/30 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-full bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/40 text-xs font-mono font-bold tracking-widest uppercase">
+                INSTITUTIONAL AI PLATFORM
+              </span>
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 font-mono text-xs font-bold">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#10b981]" />
+                <span>System Online</span>
               </div>
             </div>
+
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white font-mono tracking-tight uppercase drop-shadow-md">
+              GMC AI COMMAND CENTER
+            </h1>
+            <p className="text-sm sm:text-base text-amber-200/80 font-mono tracking-wide">
+              Institutional Market Intelligence • Quantitative Decision Platform
+            </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="bg-slate-900/90 border border-amber-500/30 px-4 py-2.5 rounded-2xl text-xs font-mono shadow-inner">
-              <span className="text-slate-400">Welcome, </span>
-              <strong className="text-amber-300 font-black">{userId}</strong>
-              <span className="text-slate-400"> — pick your 3D module</span>
+          {/* User Welcome Card */}
+          <div className="bg-[#070A10]/90 border border-[#D4AF37]/40 p-4 rounded-2xl flex items-center justify-between gap-4 shadow-xl min-w-[260px]">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#D4AF37] to-amber-700 flex items-center justify-center font-bold text-black font-mono shadow-md">
+                👑
+              </div>
+              <div>
+                <div className="text-[11px] font-mono text-slate-400 uppercase tracking-wider">
+                  AUTHENTICATED TRADER
+                </div>
+                <div className="text-sm font-black text-amber-300 font-mono">
+                  Welcome, {displayUsername}
+                </div>
+              </div>
             </div>
 
             <button
               onClick={onOpenLoginModal}
-              className={`px-4 py-2.5 rounded-2xl text-xs font-extrabold border flex items-center gap-2 transition-all shadow-lg font-mono cursor-pointer ${
-                isLoggedIn
-                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-emerald-500/10"
-                  : "btn-3d-gold active:scale-95"
-              }`}
+              className="px-3 py-1.5 rounded-xl text-xs font-mono font-bold border border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/20 transition-all cursor-pointer"
             >
-              {isLoggedIn ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              ) : (
-                <Lock className="w-4 h-4 text-white" />
-              )}
-              <span>{isLoggedIn ? "TERMINAL ACTIVE" : "LOGIN 3D"}</span>
+              PROFILE
             </button>
           </div>
         </div>
-
-        {/* Mobile App Download Prompt Bar */}
-        <div className="mt-5 bg-[#0A101A] border border-emerald-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono shadow-xl">
-          <div className="flex items-center gap-3.5">
-            <div className="p-2.5 bg-[#BEF264]/10 border border-[#BEF264]/30 rounded-xl text-[#BEF264] shadow-[0_0_12px_rgba(190,242,100,0.2)]">
-              <Smartphone className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="font-black text-[#BEF264] uppercase tracking-wide text-sm">
-                INSTALL GMC 3D AI APP
-              </div>
-              <div className="text-[11px] text-slate-300">
-                iPhone • Android • Mac • PC — Free, instant, non-stop market monitoring
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={() => onSelectTab("bond007")}
-            className="w-full sm:w-auto px-5 py-2.5 btn-neon-lime rounded-xl font-black flex items-center justify-center gap-2 transition-all text-xs cursor-pointer"
-          >
-            <span>LAUNCH APP</span>
-            <ArrowRight className="w-4 h-4 text-black" />
-          </button>
-        </div>
       </div>
 
-      {/* Header & Filter Section */}
-      <div className="pt-2 space-y-4">
-        {/* Navigation Eyebrow */}
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono uppercase tracking-widest text-slate-400">
-          <div className="flex items-center gap-2">
-            <span className="text-amber-400 font-bold">GMC 3D AI VAULT</span>
-            <span className="text-slate-600 font-bold">&gt;</span>
-            <span className="text-slate-200 font-bold">QUANT MODULE LIBRARY</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#BEF264] animate-pulse" />
-            <span className="text-[#BEF264] font-bold">GMC AI ENGINE ACTIVE</span>
-          </div>
-        </div>
+      {/* LIVE GOLD MARKET CARD (ONLY MARKET WIDGET ABOVE INTELLIGENCE MODULES) */}
+      <LiveGoldMarketCard prices={prices} currentPrice={currentPrice} />
 
-        {/* Main Display Title */}
-        <div className="space-y-2">
-          <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-none">
-            GMC 3D AI Modules <br className="hidden sm:inline" />
-            <span className="text-gradient-lime drop-shadow-[0_0_20px_rgba(190,242,100,0.25)]">
-              &amp; Institutional Intelligence Suite
+      {/* ⭐ INTELLIGENCE MODULES SECTION */}
+      <div className="pt-4 space-y-6">
+        {/* Section Heading */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#D4AF37]/20 pb-4">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">⭐</span>
+            <h2 className="text-2xl sm:text-3xl font-black font-mono uppercase tracking-tight text-white flex items-center gap-2">
+              INTELLIGENCE MODULES
+            </h2>
+            <span className="px-3 py-1 rounded-full bg-[#D4AF37]/10 text-amber-300 border border-[#D4AF37]/30 text-xs font-mono font-bold">
+              {filteredTools.length} ACTIVE ENGINES
             </span>
-          </h2>
+          </div>
 
-          <p className="text-sm sm:text-base text-slate-300 font-normal leading-relaxed max-w-3xl">
-            Original quantitative trading tools built in-house — smart-money market structure,
-            volumetric order blocks, auto support &amp; resistance, liquidity heatmaps and AI Gold Matrix.
-          </p>
-        </div>
-
-        {/* Search Capsule Bar */}
-        <div className="pt-2 max-w-2xl">
-          <div className="relative flex items-center">
-            <Search className="w-5 h-5 absolute left-4 text-slate-400 pointer-events-none" />
+          {/* Search Input */}
+          <div className="relative flex items-center min-w-[240px]">
+            <Search className="w-4 h-4 absolute left-3.5 text-slate-400 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search 3D library..."
-              className="w-full bg-[#131821] border border-white/10 focus:border-[#B8F34A]/60 text-slate-100 placeholder:text-slate-500 rounded-full pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#B8F34A]/40 transition-all font-mono shadow-lg"
+              placeholder="Search AI modules..."
+              className="w-full bg-[#070A10] border border-[#D4AF37]/30 focus:border-[#D4AF37] text-slate-100 placeholder:text-slate-500 rounded-xl pl-10 pr-4 py-2 text-xs focus:outline-none transition-all font-mono"
             />
           </div>
         </div>
 
-        {/* Filter Badges Capsule Row */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar pt-2">
-          <div className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#090C14] border border-slate-800 rounded-full text-slate-400 text-xs font-mono uppercase font-bold whitespace-nowrap">
-            <Sliders className="w-3.5 h-3.5 text-slate-400" />
-            <span>CATEGORIES</span>
-          </div>
-
+        {/* Category Filter Capsules */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
           {categories.map((cat) => {
             const isActive = activeCategory === cat.id;
             return (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`px-4 py-1.5 rounded-full text-xs font-extrabold font-mono tracking-wider transition-all uppercase whitespace-nowrap cursor-pointer ${
-                  isActive ? "pill-filter-active" : "pill-filter-inactive"
+                className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition-all uppercase whitespace-nowrap cursor-pointer border ${
+                  isActive
+                    ? "bg-[#D4AF37] text-black border-[#D4AF37] shadow-[0_0_12px_rgba(212,175,55,0.4)]"
+                    : "bg-[#070A10] text-slate-400 border-slate-800 hover:text-white hover:border-[#D4AF37]/40"
                 }`}
               >
                 {cat.label}
@@ -561,73 +532,51 @@ export const BrainVaultGrid: React.FC<BrainVaultGridProps> = ({
           })}
         </div>
 
-        {/* Results Separator */}
-        <div className="flex items-center gap-4 py-3">
-          <div className="h-[1px] bg-slate-800 flex-1" />
-          <span className="text-xs font-mono font-bold text-slate-400 uppercase tracking-widest">
-            — {filteredTools.length} MODULES AVAILABLE —
-          </span>
-          <div className="h-[1px] bg-slate-800 flex-1" />
-        </div>
-      </div>
-
-      {/* MODULE CARDS GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {filteredTools.map((tool) => (
-          <div
-            key={tool.id}
-            onClick={() => onSelectTab(tool.tabTarget)}
-            className="bg-[#0A0D16] border border-slate-800/90 hover:border-[#BEF264]/50 rounded-2xl group cursor-pointer overflow-hidden flex flex-col justify-between p-6 space-y-4 relative transition-all duration-300 hover:shadow-[0_0_25px_rgba(190,242,100,0.12)] hover:-translate-y-0.5"
-          >
-            {/* Top Row: Emoji Icon, Title & Tag Badge */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-slate-900 border border-slate-700/80 rounded-xl flex items-center justify-center text-2xl shadow-inner group-hover:border-[#BEF264]/40 transition-colors">
+        {/* INTELLIGENCE MODULE CARDS GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredTools.map((tool) => (
+            <div
+              key={tool.id}
+              onClick={() => onSelectTab(tool.tabTarget)}
+              className="bg-gradient-to-b from-[#0D1117] to-[#070A10] border border-[#D4AF37]/25 hover:border-[#D4AF37]/80 rounded-2xl group cursor-pointer overflow-hidden flex flex-col justify-between p-5 space-y-4 relative transition-all duration-300 hover:shadow-[0_0_25px_rgba(212,175,55,0.18)] hover:-translate-y-1 backdrop-blur-xl"
+            >
+              {/* Card Top Row */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="w-11 h-11 bg-[#070A10] border border-[#D4AF37]/40 rounded-xl flex items-center justify-center text-2xl shadow-inner group-hover:border-[#D4AF37] group-hover:shadow-[0_0_15px_rgba(212,175,55,0.3)] transition-all">
                     {tool.emoji}
                   </div>
-                  <div>
-                    <span className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-md border ${tool.tagColor || "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"}`}>
-                      {tool.tag}
-                    </span>
-                  </div>
+                  <span className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg border ${tool.tagColor || "bg-amber-500/10 text-amber-300 border-amber-500/30"}`}>
+                    {tool.tag}
+                  </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-lg text-[10px] font-mono text-emerald-400 font-extrabold uppercase">
+                {/* Module Title & Description */}
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-white group-hover:text-[#D4AF37] transition-colors tracking-tight font-mono">
+                    {tool.title}
+                  </h3>
+                  <p className="text-xs text-slate-300 font-normal leading-relaxed mt-2 line-clamp-2">
+                    {tool.desc}
+                  </p>
+                </div>
+              </div>
+
+              {/* Card Bottom CTA Row */}
+              <div className="pt-3 border-t border-slate-800/90 flex items-center justify-between gap-2">
+                <span className="px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>3D READY</span>
+                  <span>SYNCHRONIZED</span>
+                </span>
+
+                <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-[#D4AF37] group-hover:translate-x-1 transition-transform">
+                  <span>LAUNCH</span>
+                  <ArrowRight className="w-4 h-4 text-[#D4AF37]" />
                 </div>
               </div>
-
-              {/* Title & Description */}
-              <div>
-                <h3 className="text-xl font-black text-white group-hover:text-[#BEF264] transition-colors tracking-tight font-sans">
-                  {tool.title}
-                </h3>
-                <p className="text-xs text-slate-300 font-normal leading-relaxed mt-2">
-                  {tool.desc}
-                </p>
-              </div>
             </div>
-
-            {/* Bottom Row: Tags & Launch Button */}
-            <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="bg-[#121826] border border-slate-700/70 text-slate-300 text-[10px] font-mono rounded-md px-2 py-0.5 font-bold">
-                  XAUUSD &amp; BTC
-                </span>
-                <span className="bg-[#121826] border border-slate-700/70 text-amber-300 text-[10px] font-mono rounded-md px-2 py-0.5 font-bold">
-                  INSTITUTIONAL
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#BEF264] group-hover:translate-x-1 transition-transform">
-                <span>LAUNCH MODULE</span>
-                <ArrowRight className="w-4 h-4 text-[#BEF264]" />
-              </div>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

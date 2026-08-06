@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { getModuleTitle } from "../utils/moduleRegistry";
 import {
   Activity,
   Flame,
@@ -76,7 +77,7 @@ export const MarketSentimentGauge: React.FC<MarketSentimentGaugeProps> = ({
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-                REAL-TIME MARKET SENTIMENT GAUGE
+                {getModuleTitle("sentiment")}
               </h1>
               <p className="text-xs text-slate-400 font-sans mt-0.5">
                 AI Signal Data × Live Institutional Order Flow Cross-Reference • {asset.label} ({asset.short})

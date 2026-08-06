@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Lock, User, Key, CheckCircle2, ShieldAlert, X, Eye, EyeOff, Shield, MessageCircle, RefreshCw, SmartphoneNfc } from "lucide-react";
+import { Lock, User, Key, CheckCircle2, ShieldAlert, X, Eye, EyeOff, Shield, MessageCircle, RefreshCw, SmartphoneNfc, Clock, ShieldCheck } from "lucide-react";
+import { getValidSession, formatSessionRemainingTime } from "../utils/sessionManager";
 
 interface LiveTerminalAuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   isLoggedIn: boolean;
   loggedInUser: string | null;
-  onLoginSuccess: (username: string) => void;
+  onLoginSuccess: (username: string, rememberMe: boolean) => void;
   onLogout: () => void;
   onContactWhatsApp?: () => void;
 }
@@ -119,7 +120,7 @@ export const LiveTerminalAuthModal: React.FC<LiveTerminalAuthModalProps> = ({
         setIsSubmitting(false);
         setFailedAttempts(0);
       } else if (isNormalUser && isNormalPass) {
-        onLoginSuccess("gmcf7");
+        onLoginSuccess("gmcf7", rememberMe);
         setIsSubmitting(false);
         setFailedAttempts(0);
       } else {
@@ -149,7 +150,7 @@ export const LiveTerminalAuthModal: React.FC<LiveTerminalAuthModalProps> = ({
   const handleVerify2FA = (e: React.FormEvent) => {
     e.preventDefault();
     if (twoFactorCode.trim() === expected2FACode || twoFactorCode.trim() === "123456" || twoFactorCode.length === 6) {
-      onLoginSuccess("Ahmed (Admin)");
+      onLoginSuccess("Ahmed (Admin)", rememberMe);
       setIs2FAStage(false);
     } else {
       setErrorMsg("Invalid 2FA Verification Code. Please try again or click Auto-Fill.");
@@ -207,9 +208,21 @@ export const LiveTerminalAuthModal: React.FC<LiveTerminalAuthModalProps> = ({
                 </span>
               </div>
               <div className="flex justify-between border-b border-slate-800/80 pb-2">
-                <span className="text-slate-500">AI BRAIN SYNC:</span>
-                <span className="text-emerald-400 font-bold">MASTER CONSENSUS ACTIVE</span>
+                <span className="text-slate-500">PERSISTENT SESSION:</span>
+                <span className="text-emerald-400 font-bold flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  {getValidSession()?.rememberMe ? "14-DAY STAY LOGGED IN" : "SESSION-ONLY"}
+                </span>
               </div>
+              {getValidSession() && (
+                <div className="flex justify-between border-b border-slate-800/80 pb-2">
+                  <span className="text-slate-500">SESSION EXPIRES IN:</span>
+                  <span className="text-amber-300 font-bold flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-amber-400" />
+                    {formatSessionRemainingTime(getValidSession()!.expiresAt)}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between border-b border-slate-800/80 pb-2">
                 <span className="text-slate-500">EXECUTION LATENCY:</span>
                 <span className="text-cyan-400 font-bold">0.12ms (INSTITUTIONAL FEED)</span>
@@ -442,19 +455,22 @@ export const LiveTerminalAuthModal: React.FC<LiveTerminalAuthModalProps> = ({
                 )}
 
                 <div className="flex items-center justify-between text-[11px]">
-                  <label className="flex items-center gap-2 text-slate-400 cursor-pointer select-none">
+                  <label className="flex items-center gap-2 text-slate-300 cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
-                      className="rounded bg-slate-900 border-slate-700 text-amber-500 focus:ring-amber-500 focus:ring-offset-slate-900"
+                      className="w-4 h-4 rounded bg-slate-900 border-slate-700 text-amber-500 focus:ring-amber-500 focus:ring-offset-slate-900 cursor-pointer"
                     />
-                    <span>Remember Me</span>
+                    <span className="font-bold">Remember Me</span>
+                    <span className="text-[10px] text-amber-400 font-mono font-semibold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">
+                      (Stay Logged In 14 Days)
+                    </span>
                   </label>
                   <button
                     type="button"
                     onClick={handleForgotPassword}
-                    className="text-amber-400 hover:text-amber-300 hover:underline cursor-pointer"
+                    className="text-amber-400 hover:text-amber-300 hover:underline cursor-pointer font-semibold"
                   >
                     Forgot Password?
                   </button>

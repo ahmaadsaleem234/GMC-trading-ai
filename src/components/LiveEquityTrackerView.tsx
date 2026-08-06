@@ -1,4 +1,5 @@
 import React from "react";
+import { getModuleTitle } from "../utils/moduleRegistry";
 import { TrendingUp, BarChart3, ShieldAlert, Award, PieChart, Activity, DollarSign, ArrowUpRight } from "lucide-react";
 import { TradeLogEntry } from "../types";
 
@@ -40,7 +41,7 @@ export function LiveEquityTrackerView({ trades = [] }: LiveEquityTrackerViewProp
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase">
-                  📈 LIVE EQUITY CURVE & DRAWDOWN TRACKER
+                  {getModuleTitle("equitytracker")}
                 </h1>
                 <span className="px-2.5 py-0.5 bg-emerald-500 text-black font-extrabold text-[10px] rounded uppercase tracking-wider">
                   PORTFOLIO ANALYTICS

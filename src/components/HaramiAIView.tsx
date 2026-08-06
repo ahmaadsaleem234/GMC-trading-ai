@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { getModuleTitle } from "../utils/moduleRegistry";
 import {
   ShieldCheck,
   Zap,
@@ -124,7 +125,7 @@ export function HaramiAIView({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase">
-                  🥷 HARAMI AI — MASTER INTEGRATOR & OMNI SYNTHESIZER
+                  {getModuleTitle("harami")}
                 </h1>
                 <span className="px-2.5 py-0.5 bg-purple-500 text-white font-extrabold text-[10px] rounded uppercase tracking-wider">
                   MASTER CONFLUENCE 98.4%

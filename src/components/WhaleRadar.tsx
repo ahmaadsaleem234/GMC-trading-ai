@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { getModuleTitle } from "../utils/moduleRegistry";
 import { Activity, ShieldAlert, ArrowDown, ArrowUp, Zap, Target, Radio, Lock, RefreshCw, CheckCircle2 } from "lucide-react";
 import { SUPPORTED_ASSETS } from "../useLiveData";
 import { LivePrice } from "../types";
@@ -126,7 +127,7 @@ export const WhaleRadar: React.FC<WhaleRadarProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase">
-                  🦅 WHITE CROW RADAR — WHALE ORDER FLOW
+                  {getModuleTitle("whale")}
                 </h1>
                 <span className="px-2 py-0.5 bg-cyan-500/20 border border-cyan-500 text-cyan-300 font-extrabold text-[10px] rounded uppercase flex items-center gap-1">
                   <Lock className="w-3 h-3 text-cyan-400" /> PRICE LOCKED

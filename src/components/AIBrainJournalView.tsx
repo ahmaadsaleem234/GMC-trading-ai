@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { getModuleTitle } from "../utils/moduleRegistry";
 import {
   Brain,
   ShieldCheck,
@@ -93,7 +94,7 @@ export function AIBrainJournalView({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase">
-                  🧠 AI BRAIN AUTO-JOURNAL & SELF-CORRECTION ENGINE
+                  {getModuleTitle("journal")}
                 </h1>
                 <span className="px-2.5 py-0.5 bg-indigo-500 text-white font-extrabold text-[10px] rounded uppercase tracking-wider">
                   REAL-TIME SYNCHRONIZED

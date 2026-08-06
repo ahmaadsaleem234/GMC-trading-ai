@@ -1,4 +1,5 @@
 import React from "react";
+import { getModuleTitle } from "../utils/moduleRegistry";
 import { Radio, ArrowUpRight, ArrowDownRight, Zap } from "lucide-react";
 import { SUPPORTED_ASSETS } from "../useLiveData";
 import { LivePrice } from "../types";
@@ -13,7 +14,7 @@ export const SignalScanner: React.FC<SignalScannerProps> = ({ prices, onSelectAs
     <div id="gmc-signal-scanner" className="space-y-6 pb-12 font-sans">
       <div className="bg-[#0A0A0A] border border-slate-800 rounded-xl p-5 shadow-xl">
         <h1 className="text-xl font-bold text-white flex items-center gap-2">
-          <Radio className="w-5 h-5 text-blue-400" /> REAL-TIME CRYPTO & FOREX SIGNAL SCANNER
+          {getModuleTitle("aimaster")}
         </h1>
         <p className="text-xs text-slate-500 mt-1 font-mono">
           Scans multi-timeframe indicators, RSI momentum, SMC Order Blocks, and session volatility across all supported markets.

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { getModuleTitle } from "../utils/moduleRegistry";
 import {
   BarChart3,
   TrendingUp,
@@ -73,7 +74,7 @@ export const ComparativeTerminal: React.FC<ComparativeTerminalProps> = ({
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-                CORRELATED ASSET COMPARATIVE TERMINAL
+                {getModuleTitle("comparative")}
               </h1>
               <p className="text-xs text-slate-400 font-sans mt-0.5">
                 Side-by-Side Dual Price Action Analysis • Inter-Market Divergence & Entry Timing Engine

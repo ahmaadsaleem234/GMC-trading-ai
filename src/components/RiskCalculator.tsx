@@ -8,8 +8,8 @@ interface RiskCalculatorProps {
 export const RiskCalculator: React.FC<RiskCalculatorProps> = ({ currentPrice }) => {
   const [balance, setBalance] = useState<number>(10000);
   const [riskPct, setRiskPct] = useState<number>(1.0);
-  const [entryPrice, setEntryPrice] = useState<number>(currentPrice || 3317.5);
-  const [stopLossPrice, setStopLossPrice] = useState<number>((currentPrice || 3317.5) * 0.99);
+  const [entryPrice, setEntryPrice] = useState<number>(currentPrice || 4238.5);
+  const [stopLossPrice, setStopLossPrice] = useState<number>((currentPrice || 4238.5) * 0.99);
   const [leverage, setLeverage] = useState<number>(20);
 
   const riskAmountUSD = (balance * riskPct) / 100;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { getModuleTitle } from "../utils/moduleRegistry";
 import {
   Brain,
   ShieldCheck,
@@ -57,8 +58,8 @@ export const MasterAIBrainSynthesizer: React.FC<MasterAIBrainSynthesizerProps> =
   const [showAlertPopup, setShowAlertPopup] = useState<boolean>(true);
   const [refreshCycle, setRefreshCycle] = useState<number>(0);
 
-  const livePriceObj = prices[activeAssetKey] || { price: currentPrice || 3317.5, changePct: 0.42 };
-  const basePrice = livePriceObj.price || 3317.5;
+  const livePriceObj = prices[activeAssetKey] || { price: currentPrice || 4238.5, changePct: 0.42 };
+  const basePrice = livePriceObj.price || 4238.5;
   const decimals = activeAssetKey.includes("EUR") || activeAssetKey.includes("GBP") ? 4 : 2;
 
   // Master AI Brain Locked Setup Hook
@@ -293,7 +294,7 @@ export const MasterAIBrainSynthesizer: React.FC<MasterAIBrainSynthesizerProps> =
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl font-black text-amber-400 uppercase tracking-tight flex items-center gap-2">
-                BATMAN MASTER AI CONSENSUS BRAIN
+                {getModuleTitle("masterbrain")}
               </h1>
               <p className="text-xs text-slate-400 font-sans mt-0.5">
                 Central Omni-Brain Controller • Auto-Refreshes Live Every {autoRefreshSec}s

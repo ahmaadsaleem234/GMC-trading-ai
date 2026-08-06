@@ -81,7 +81,7 @@ function calculateEMA(candles: Candle[], period: number): number[] {
   return emas;
 }
 
-export function runBacktest(config: BacktestConfig, customCandles?: Candle[], assetBasePrice = 3317.5): BacktestResult {
+export function runBacktest(config: BacktestConfig, customCandles?: Candle[], assetBasePrice = 4238.5): BacktestResult {
   const candles = customCandles && customCandles.length > 30
     ? customCandles
     : generateHistoricalCandles(config.assetKey, assetBasePrice, config.timeframe, config.periodBars);

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { getModuleTitle } from "../utils/moduleRegistry";
 import {
   Crown,
   Globe,
@@ -307,7 +308,7 @@ export const GmcGoldZoneCardView: React.FC<GmcGoldZoneCardViewProps> = ({
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl sm:text-3xl font-black text-amber-400 uppercase tracking-tight flex items-center gap-2">
-                  GMC GOLD <span className="text-white">ZONE CARD</span>
+                  {getModuleTitle("gmcgold")}
                 </h1>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300 mt-1">

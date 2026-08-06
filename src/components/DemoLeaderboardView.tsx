@@ -1,4 +1,5 @@
 import React from "react";
+import { getModuleTitle } from "../utils/moduleRegistry";
 import { Trophy, Zap, ShieldCheck, BarChart3, TrendingUp, RefreshCw, Award, Activity, Cpu } from "lucide-react";
 import { TabDemoAccount } from "../useDemoAccounts";
 
@@ -38,7 +39,7 @@ export function DemoLeaderboardView({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase">
-                  🏆 $5,000 DEMO AI BRAIN LEADERBOARD
+                  {getModuleTitle("demoleaderboard")}
                 </h1>
                 <span className="px-2.5 py-0.5 bg-amber-500 text-black font-extrabold text-[10px] rounded uppercase tracking-wider">
                   REAL-TIME COMPARISON

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { getModuleTitle } from "../utils/moduleRegistry";
 import {
   ShieldAlert,
   Zap,
@@ -126,9 +127,8 @@ export const Bond007View: React.FC<Bond007ViewProps> = ({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xl sm:text-2xl">🕵️</span>
               <h1 className="text-xl sm:text-2xl font-black tracking-tight text-amber-400 uppercase">
-                BOND 007 <span className="text-xs font-bold text-slate-400 tracking-wider">COMMAND CENTER</span>
+                {getModuleTitle("bond007")}
               </h1>
             </div>
             <p className="text-xs text-slate-400 font-sans mt-1">

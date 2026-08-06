@@ -1,10 +1,15 @@
 import { useEffect, useRef } from "react";
 import {
   getTelegramConfig,
-  dispatchTradeAlertToTelegram,
   dispatchSLTPResultToTelegram,
   sendTelegramMessage,
 } from "./utils/telegram";
+import {
+  evaluateDualScenarioInstitutionalSetup,
+  dispatchInstitutionalSignalToTelegram,
+} from "./utils/institutionalSignalEngine";
+import { getModuleTitle } from "./utils/moduleRegistry";
+import { fetchLiveGoldPrice } from "./services/goldApiService";
 
 export interface ActiveTelegramSignal {
   id: string;
@@ -16,6 +21,7 @@ export interface ActiveTelegramSignal {
   tp1: number;
   tp2: number;
   tp3: number;
+  tp4?: number;
   lotSize: number;
   confluence: string;
   status: "OPEN" | "TP_HIT" | "SL_HIT";
@@ -54,35 +60,41 @@ export function useAutoTelegramBroadcaster() {
     }
 
     // 3. Send initial startup welcome message once per browser session
-    const startupSent = sessionStorage.getItem("gmc_auto_telegram_init_v9");
+    const startupSent = sessionStorage.getItem("gmc_auto_telegram_init_v10");
     if (!startupSent) {
-      sessionStorage.setItem("gmc_auto_telegram_init_v9", "true");
+      sessionStorage.setItem("gmc_auto_telegram_init_v10", "true");
 
       const initMessage = `
-<b>👑 GMC MASTER AI BRAIN TELEGRAM BOT ONLINE</b>
+<b>👑 GMC SOVEREIGN AI BRAIN TELEGRAM BOT ONLINE</b>
 ━━━━━━━━━━━━━━━━━━━
-<b>STATUS:</b> <code>LIVE MARKET REAL-PRICE MONITORING</code>
-<b>SINGLE MASTER BRAIN:</b> <code>👑 GMC MASTER AI BRAIN SYNTHESIZER</code>
-<b>MODE:</b> <code>REAL TP/SL EXECUTION (NO FAKE TIMERS)</code>
+<b>STATUS:</b> <code>REAL-TIME DUAL-SCENARIO MARKET MONITORING</code>
+<b>TOP 2 ENGINES ACTIVE:</b>
+• 1. ${getModuleTitle("aibrain")}
+• 2. ${getModuleTitle("masterbrain")}
+<b>SCENARIO EVALUATION:</b> <code>BUY vs SELL Confidence Comparison (A+ Trade Only)</code>
 <b>STRICT LOT SIZE:</b> <code>0.01 LOT</code>
-<b>COVERED ASSETS:</b> Gold (XAUUSD) & Bitcoin (BTCUSD)
+<b>COVERED ASSETS:</b> Gold (XAUUSD) & Crypto (BTCUSD)
 
-<i>⚡ Real-Time Price Protocol Active: Signal stays open until real market price hits TP or SL. No duplicate setups or artificial timers!</i>
+<i>⚡ Dual-scenario institutional evaluation active! Only the higher probability setup with >=85% confidence is published.</i>
       `.trim();
 
-      sendTelegramMessage(initMessage, "init-welcome-v9").catch(() => {});
+      sendTelegramMessage(initMessage, "init-welcome-v10").catch(() => {});
     }
 
-    // Helper: Fetch real-time price from Binance API
+    // Helper: Fetch real-time price using dedicated Gold API or Binance for Crypto
     async function fetchLivePrice(asset: "XAUUSD" | "BTCUSD"): Promise<number | null> {
       try {
-        const symbol = asset === "XAUUSD" ? "PAXGUSDT" : "BTCUSDT";
-        const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
-        if (res.ok) {
-          const json = await res.json();
-          if (json && json.price) {
-            const price = parseFloat(json.price);
-            if (!isNaN(price) && price > 0) return price;
+        if (asset === "XAUUSD") {
+          const goldQuote = await fetchLiveGoldPrice();
+          if (goldQuote && goldQuote.price) return goldQuote.price;
+        } else {
+          const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT`);
+          if (res.ok) {
+            const json = await res.json();
+            if (json && json.price) {
+              const price = parseFloat(json.price);
+              if (!isNaN(price) && price > 0) return price;
+            }
           }
         }
       } catch (err) {
@@ -91,47 +103,35 @@ export function useAutoTelegramBroadcaster() {
       return null;
     }
 
-    // Helper: Generate and broadcast a brand new signal based on REAL live entry price
+    // Helper: Generate and broadcast dual-scenario setup for Top 2 Engines
     async function generateNewSignal() {
       const config = getTelegramConfig();
       if (!config.enabled) return;
 
-      // Toggle asset between XAUUSD and BTCUSD
       const asset: "XAUUSD" | "BTCUSD" = assetToggleRef.current % 2 === 0 ? "XAUUSD" : "BTCUSD";
+      const engineId: "aibrain" | "masterbrain" = assetToggleRef.current % 4 < 2 ? "aibrain" : "masterbrain";
       assetToggleRef.current += 1;
 
       const livePrice = await fetchLivePrice(asset);
-      if (!livePrice) return; // Wait for next tick if API fails
+      if (!livePrice) return;
 
-      const type: "BUY" | "SELL" = "BUY"; // Default direction for high probability setups
-      const entry = Number(livePrice.toFixed(2));
-
-      let sl: number, tp1: number, tp2: number, tp3: number;
-
-      if (asset === "XAUUSD") {
-        sl = Number((entry - 3.80).toFixed(2));
-        tp1 = Number((entry + 4.50).toFixed(2));
-        tp2 = Number((entry + 8.50).toFixed(2));
-        tp3 = Number((entry + 15.00).toFixed(2));
-      } else {
-        sl = Number((entry - 220.00).toFixed(2));
-        tp1 = Number((entry + 280.00).toFixed(2));
-        tp2 = Number((entry + 550.00).toFixed(2));
-        tp3 = Number((entry + 1100.00).toFixed(2));
-      }
+      // CONTINUOUS DUAL-SCENARIO ANALYSIS: BUY vs SELL
+      const setup = evaluateDualScenarioInstitutionalSetup(engineId, asset, livePrice);
+      if (!setup || !setup.passedRejectionFilters) return;
 
       const newTrade: ActiveTelegramSignal = {
         id: `master-${Date.now()}`,
-        source: "👑 GMC MASTER AI BRAIN SYNTHESIZER",
+        source: setup.engineName,
         asset,
-        type,
-        entry,
-        sl,
-        tp1,
-        tp2,
-        tp3,
+        type: setup.direction,
+        entry: setup.bestEntry,
+        sl: setup.stopLoss,
+        tp1: setup.tp1,
+        tp2: setup.tp2,
+        tp3: setup.tp3,
+        tp4: setup.tp4,
         lotSize: 0.01,
-        confluence: `99.4% Master AI Consensus • Real Market Price Feed (${asset})`,
+        confluence: setup.reasonForEntry,
         status: "OPEN",
         createdAt: Date.now(),
       };
@@ -139,20 +139,8 @@ export function useAutoTelegramBroadcaster() {
       activeTradeRef.current = newTrade;
       localStorage.setItem(ACTIVE_TRADE_KEY, JSON.stringify(newTrade));
 
-      // Broadcast new trade entry to Telegram
-      await dispatchTradeAlertToTelegram({
-        source: newTrade.source,
-        asset: newTrade.asset,
-        type: newTrade.type,
-        entry: newTrade.entry,
-        sl: newTrade.sl,
-        tp1: newTrade.tp1,
-        tp2: newTrade.tp2,
-        tp3: newTrade.tp3,
-        lotSize: newTrade.lotSize,
-        confluence: newTrade.confluence,
-        accountBalance: balanceRef.current,
-      });
+      // Broadcast complete 15-field institutional Telegram signal
+      await dispatchInstitutionalSignalToTelegram(setup);
     }
 
     // Main real-time monitoring loop running every 5 seconds
@@ -164,16 +152,14 @@ export function useAutoTelegramBroadcaster() {
         const active = activeTradeRef.current;
 
         if (!active) {
-          // Check cooldown buffer (at least 60s pause after last trade closed)
           const lastClosedStr = localStorage.getItem(LAST_CLOSED_KEY);
           const lastClosedTime = lastClosedStr ? parseInt(lastClosedStr, 10) : 0;
           const elapsedSinceClose = Date.now() - lastClosedTime;
 
-          if (elapsedSinceClose >= 60000) {
+          if (elapsedSinceClose >= 45000) {
             await generateNewSignal();
           }
         } else {
-          // Active trade exists: fetch current live market price to check TP / SL
           const currentPrice = await fetchLivePrice(active.asset);
           if (currentPrice !== null) {
             let isTP = false;
@@ -190,7 +176,6 @@ export function useAutoTelegramBroadcaster() {
             if (isTP || isSL) {
               const outcome: "TP_HIT" | "SL_HIT" = isTP ? "TP_HIT" : "SL_HIT";
               
-              // Calculate genuine PnL in USD for 0.01 lot
               let pnlUSD = 0;
               if (active.asset === "XAUUSD") {
                 pnlUSD = active.type === "BUY"
@@ -206,7 +191,6 @@ export function useAutoTelegramBroadcaster() {
               balanceRef.current = Number((balanceRef.current + pnlUSD).toFixed(2));
               localStorage.setItem(BALANCE_KEY, balanceRef.current.toString());
 
-              // Broadcast real trade result to Telegram
               await dispatchSLTPResultToTelegram({
                 source: active.source,
                 asset: active.asset,
@@ -217,7 +201,6 @@ export function useAutoTelegramBroadcaster() {
                 accountBalance: balanceRef.current,
               });
 
-              // Clear active trade & set last closed timestamp
               activeTradeRef.current = null;
               localStorage.removeItem(ACTIVE_TRADE_KEY);
               localStorage.setItem(LAST_CLOSED_KEY, Date.now().toString());

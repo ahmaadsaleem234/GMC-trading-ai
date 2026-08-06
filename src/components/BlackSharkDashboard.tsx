@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { getModuleTitle } from "../utils/moduleRegistry";
 import { ShieldAlert, CheckCircle2, AlertTriangle, ArrowUpRight, ArrowDownRight, Activity, Zap, Layers, RefreshCw, Crosshair, BarChart2, Flame } from "lucide-react";
 import { BlackSharkData, LivePrice } from "../types";
 import { InstitutionalLiquidityHeatmapD3 } from "./InstitutionalLiquidityHeatmapD3";
@@ -87,7 +88,7 @@ export const BlackSharkDashboard: React.FC<BlackSharkDashboardProps> = ({ curren
             <div className="flex items-center gap-2.5">
               <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
               <h1 className="text-xl font-semibold tracking-tight text-white flex items-center gap-3">
-                {data.system}
+                {getModuleTitle("blackshark")}
                 <span className="text-[10px] font-mono font-bold uppercase tracking-widest px-2.5 py-1 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
                   {data.mode}
                 </span>

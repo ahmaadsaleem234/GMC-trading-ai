@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
+import { getModuleTitle } from "../utils/moduleRegistry";
 import {
   Activity, Sliders, Bell, Globe, RefreshCw, Zap, TrendingUp, Cpu, BarChart3,
   Radio, Shield, Star, Target, Layers, Flame, Droplets, Coins, Clock, Newspaper,
@@ -99,7 +100,7 @@ export function MTFDojiView({ currentPrice, assetKey }: { currentPrice: number; 
     <div className="space-y-6 font-mono text-xs">
       <div className="bg-[#0A0A0A] border border-slate-800 rounded-xl p-5 shadow-xl font-sans">
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <CircleDot className="w-5 h-5 text-red-500" /> MTF RED DOJI SUPPLY & DEMAND ZONES
+          {getModuleTitle("mtfdoji")}
         </h2>
         <p className="text-xs text-slate-500 mt-1 font-mono">
           Detects symmetrical red-doji clusters across H4, H1, M30, M15, and M5 timeframes with fresh, armed, triggered, and flipped states.
@@ -223,7 +224,7 @@ export function CipherView({ currentPrice, assetKey }: { currentPrice: number; a
     <div className="space-y-6 font-mono text-xs">
       <div className="bg-[#0A0A0A] border border-slate-800 rounded-xl p-5 shadow-xl font-sans">
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <Zap className="w-5 h-5 text-blue-400" /> CIPHER MULTI-TIMEFRAME AI ENGINE
+          {getModuleTitle("cipher")}
         </h2>
         <p className="text-xs text-slate-500 mt-1 font-mono">
           Scans multi-timeframe wave oscillator, momentum divergence, and session liquidity sweeps.
@@ -319,7 +320,7 @@ export function NexusView({ currentPrice, assetKey }: { currentPrice: number; as
     <div className="space-y-6 font-mono text-xs">
       <div className="bg-[#0A0A0A] border border-slate-800 rounded-xl p-5 shadow-xl font-sans">
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <Layers className="w-5 h-5 text-blue-400" /> MARKET HUB (NEXUS) MASTER VERDICT
+          {getModuleTitle("nexus")}
         </h2>
         <p className="text-xs text-slate-500 mt-1 font-mono">
           Aggregates 5 core algorithmic execution engines and DXY correlation into a unified consensus.
@@ -518,7 +519,7 @@ export function SMCView({ currentPrice, assetKey }: { currentPrice: number; asse
     <div className="space-y-6 font-mono text-xs">
       <div className="bg-[#0A0A0A] border border-slate-800 rounded-xl p-5 shadow-xl font-sans">
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <Landmark className="w-5 h-5 text-blue-400" /> SMART MONEY FLOW (SMC) ENGINE
+          {getModuleTitle("smc")}
         </h2>
         <p className="text-xs text-slate-500 mt-1 font-mono">
           Identifies unmitigated Order Blocks, Fair Value Gaps (FVG), Break of Structure (BOS), and Premium/Discount zones.
@@ -612,7 +613,7 @@ export function FalconView({ currentPrice, assetKey }: { currentPrice: number; a
     <div className="space-y-6 font-mono text-xs">
       <div className="bg-[#0A0A0A] border border-slate-800 rounded-xl p-5 shadow-xl font-sans">
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <Radio className="w-5 h-5 text-blue-400" /> SIGNAL PILOT (FALCON) OVERLAY ENGINE
+          {getModuleTitle("falcon")}
         </h2>
         <p className="text-xs text-slate-500 mt-1 font-mono">
           Multi-layer execution pilot with Unicorn OB, CHoCH, and Premium/Discount overlays.
@@ -1153,7 +1154,7 @@ export function SatoshiView({ currentPrice, assetKey }: { currentPrice: number; 
     <div className="space-y-6 font-mono text-xs">
       <div className="bg-[#0A0A0A] border border-slate-800 rounded-xl p-5 shadow-xl font-sans">
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <Coins className="w-5 h-5 text-amber-400" /> CRYPTO INTEL (SATOSHI) ENGINE
+          {getModuleTitle("satoshi")}
         </h2>
         <p className="text-xs text-slate-500 mt-1 font-mono">
           Bitcoin & Crypto institutional liquidity matrix and derivative funding rate bias.

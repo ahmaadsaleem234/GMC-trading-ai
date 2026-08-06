@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { SUPPORTED_ASSETS } from "../useLiveData";
 import { LivePrice } from "../types";
+import { MODULE_REGISTRY, ModuleRegistryItem } from "../utils/moduleRegistry";
 
 interface NavbarProps {
   activeTab: string;
@@ -44,58 +45,11 @@ interface NavbarProps {
   onOpenHeatmapOverlay?: () => void;
   onGoBack?: () => void;
   onGoHome?: () => void;
+  onOpenMarketDataModal?: () => void;
 }
 
-export interface NavItem {
-  id: string;
-  label: string;
-  icon: any;
-  category: "Core" | "AI Intelligence" | "Signals" | "Market Data" | "Analytics" | "Tools" | "News" | "Admin";
-  desc: string;
-}
-
-export const NAV_ITEMS: NavItem[] = [
-  { id: "landing", label: "🌐 GMC TRADING AI™ Institutional Landing Portal", icon: Globe, category: "Core", desc: "Institutional public overview, features matrix & public AI architecture" },
-  { id: "gmcgold", label: "👑 GMC GOLD Apex Bank-Zone Matrix", icon: Crown, category: "Core", desc: "Top #1 Bank-Zone liquidity matrix, Gold institutional order blocks & zone maps" },
-  { id: "d3heatmap", label: "🔥 GMC D3 Institutional Liquidity Heatmap", icon: Flame, category: "Core", desc: "Interactive D3 liquidity thermal map & real-time order book cluster radar" },
-  { id: "gmccap", label: "⚡ GMC Alpha 1H Trend Command Engine", icon: Cpu, category: "Core", desc: "1-Hour H1 trend command engine with high precision institutional zones" },
-  { id: "harami", label: "⚔️ GMC Reversal Rejection Neural Radar", icon: Cpu, category: "Core", desc: "M15 order block reversal rejection neural radar with 99.1% Win Rate" },
-  { id: "demoleaderboard", label: "🥇 GMC $5K Institutional Trader Hall", icon: Trophy, category: "Core", desc: "Live $5,000 demo account ranking & institutional trader performance matrix" },
-  { id: "journal", label: "📓 GMC AI Precision Trade Logger & Analytics", icon: BookOpen, category: "AI Intelligence", desc: "AI trade logger, execution journal, risk metrics & performance analytics" },
-  { id: "institutional", label: "🏛️ GMC Sovereign SMC Liquidity Desk", icon: Zap, category: "Core", desc: "Smart Money Concepts (SMC) order blocks & Fair Value Gap (FVG) scanner" },
-  { id: "equitytracker", label: "📈 GMC Dynamic Portfolio Risk & Drawdown Monitor", icon: PieChart, category: "Analytics", desc: "Portfolio equity curve, dynamic drawdown monitor & risk metrics" },
-  { id: "vault", label: "🏰 GMC Central Intelligence Vault & Archive", icon: Cpu, category: "Core", desc: "Central intelligence hub displaying all 38+ AI trading modules" },
-  { id: "masterbrain", label: "👑 GMC Sovereign AI Signal Fusion Core", icon: Cpu, category: "Core", desc: "Sovereign signal fusion core synthesizing multi-agent consensus" },
-  { id: "bond007", label: "🕵️‍♂️ GMC Secret Agent Order Block Sniper", icon: ShieldAlert, category: "Core", desc: "Secret agent order block sniper with London breaker reclaim timing" },
-  { id: "sentiment", label: "🎯 GMC Macro Sentiment & Order Flow Gauge", icon: Activity, category: "Core", desc: "Macro sentiment gauge & real-time order flow volume absorber" },
-  { id: "heatmap", label: "🌋 GMC Deep Order Book Volatility Thermal", icon: Activity, category: "Core", desc: "Deep order book volatility thermal map & BSL/SSL pools radar" },
-  { id: "comparative", label: "⚖️ GMC Cross-Asset Intermarket Scanner", icon: BarChart3, category: "Core", desc: "Cross-asset intermarket scanner (XAUUSD vs USD Index DXY correlation)" },
-  { id: "blackshark", label: "🦈 GMC Apex Predator DOM & Depth Scanner", icon: Cpu, category: "Core", desc: "Apex predator depth of market (DOM) & order flow bid/ask wall scanner" },
-  { id: "aimaster", label: "🦁 GMC Vanguard 5-System Signal Matrix", icon: Zap, category: "Signals", desc: "Vanguard 5-system signal matrix ensemble (Command + AI + BTL + Meer + Snake)" },
-  { id: "breakout", label: "🚀 GMC Kinetic Momentum Breakout Radar", icon: TrendingUp, category: "Signals", desc: "Kinetic momentum breakout radar with advance zone retest signals" },
-  { id: "aibrain", label: "✨ GMC Quantum AI Trade Signal Director", icon: Cpu, category: "AI Intelligence", desc: "Quantum AI trade signal director with 69-voter consensus engine" },
-  { id: "chart", label: "📊 GMC Live Professional Charting Suite", icon: BarChart3, category: "Core", desc: "Live professional charting suite with multi-asset price action" },
-  { id: "tradelog", label: "📜 GMC Live Execution History & Ledger", icon: Cpu, category: "Analytics", desc: "Live execution history, order ledger & closed trade audit history" },
-  { id: "metrics", label: "📉 GMC Quantitative Analytics & Win-Rate Lab", icon: PieChart, category: "Analytics", desc: "Quantitative win-rate lab & statistical edge analyzer" },
-  { id: "sniper", label: "🎯 GMC Micro Order Block Trigger Scanner", icon: Zap, category: "Signals", desc: "Micro order block trigger scanner for M1/M5 sniper entries" },
-  { id: "nexus", label: "⚡ GMC Horizon Tactical Command Core", icon: Zap, category: "Signals", desc: "Horizon tactical command core with 10-agent council" },
-  { id: "mtfdoji", label: "🔮 GMC Multi-Layer Supply & Demand Grid", icon: Flame, category: "Signals", desc: "Multi-layer supply & demand grid with red doji testing alerts" },
-  { id: "cipher", label: "🤖 GMC Cyber-Reactor ML Pattern Predictor", icon: Cpu, category: "Signals", desc: "Cyber-reactor ML pattern predictor for zone respect probabilities" },
-  { id: "doji", label: "🐍 GMC Stealth Candle Reversal Trigger", icon: Flame, category: "Signals", desc: "Stealth candle reversal trigger with zone-lifecycle tracking" },
-  { id: "smc", label: "🌊 GMC Structural Market Cycle Engine", icon: Zap, category: "Signals", desc: "Structural market cycle engine (BOS, CHoCH, Liquidity Sweeps)" },
-  { id: "falcon", label: "🦅 GMC Eagle-Eye Institutional Order Pilot", icon: Radio, category: "Signals", desc: "Eagle-eye institutional order pilot for high-altitude market scans" },
-  { id: "brainspro", label: "🧠 GMC Multi-Agent AI Strategy Synthesizer", icon: Cpu, category: "AI Intelligence", desc: "Multi-agent AI strategy synthesizer & deep reasoning chains" },
-  { id: "satoshi", label: "🪙 GMC Digital Asset Crypto Macro Desk", icon: Radio, category: "Market Data", desc: "Digital asset crypto macro desk for Bitcoin & Ethereum" },
-  { id: "liquidity", label: "💧 GMC Market Liquidity & Depth Analyzer", icon: Activity, category: "Market Data", desc: "Market liquidity depth analyzer & stop pool clusters" },
-  { id: "multitf", label: "📐 GMC Multi-Timeframe Trend Alignment Engine", icon: BarChart3, category: "Market Data", desc: "Multi-timeframe trend alignment engine (M5 to D1 trend sync)" },
-  { id: "whale", label: "🐳 GMC Whale Order Tracker & Big Money Radar", icon: Activity, category: "Market Data", desc: "Whale order tracker & big money institutional order radar" },
-  { id: "news", label: "📅 GMC Global Macro Economic Desk", icon: Globe, category: "News", desc: "Global macro economic calendar & high impact news desk" },
-  { id: "ainews", label: "📡 GMC AI Sentiment & Live Breaking Desk", icon: Globe, category: "News", desc: "AI sentiment & breaking economic news analyzer" },
-  { id: "backtest", label: "🔬 GMC High-Frequency Quantitative Strategy Lab", icon: RefreshCw, category: "Tools", desc: "High-frequency quantitative strategy backtesting lab" },
-  { id: "risk", label: "🧮 GMC Capital Risk & Position Size Calculator", icon: Sliders, category: "Tools", desc: "Capital risk, position size & lot size calculator" },
-  { id: "alerts", label: "🔔 GMC Intelligent Price Alert Dispatcher", icon: Bell, category: "Tools", desc: "Intelligent price alert dispatcher & threshold notifier" },
-  { id: "admin", label: "🛡️ GMC Enterprise Security & Admin Control Panel", icon: ShieldAlert, category: "Admin", desc: "Enterprise security, user sessions & Telegram Bot control panel" },
-];
+export type NavItem = ModuleRegistryItem;
+export const NAV_ITEMS: NavItem[] = MODULE_REGISTRY;
 
 export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
@@ -111,6 +65,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenHeatmapOverlay,
   onGoBack,
   onGoHome,
+  onOpenMarketDataModal,
 }) => {
   const [isNavDrawerOpen, setIsNavDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -143,215 +98,80 @@ export const Navbar: React.FC<NavbarProps> = ({
   const activeItemLabel = NAV_ITEMS.find((i) => i.id === activeTab)?.label || "Dashboard";
 
   return (
-    <header id="gmc-navbar" className="bg-[#0A0D12]/90 backdrop-blur-xl border-b border-white/10 text-slate-200 sticky top-0 z-50 shadow-2xl">
-      {/* Top Utility & Status Bar */}
-      <div className="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between text-xs gap-3 border-b border-white/5">
-        <div className="flex items-center gap-3">
-          {/* Main GMC Navigation Drawer Toggle Button */}
+    <header id="gmc-navbar" className="bg-[#070A10]/95 backdrop-blur-2xl border-b border-[#D4AF37]/30 text-slate-200 sticky top-0 z-50 shadow-2xl">
+      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4 font-mono">
+        {/* Left: Gold Outlined Back & Home Buttons */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            id="header-nav-back-btn"
+            onClick={onGoBack || (() => setActiveTab("vault"))}
+            className="flex items-center gap-2 px-3.5 py-2 bg-[#070A10] hover:bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/60 hover:border-[#D4AF37] rounded-xl font-mono font-bold text-xs uppercase transition-all shadow-[0_0_12px_rgba(212,175,55,0.2)] active:scale-95 cursor-pointer"
+            title="Go Back"
+          >
+            <ArrowLeft className="w-4 h-4 text-[#D4AF37]" />
+            <span>Back</span>
+          </button>
+
+          <button
+            id="header-nav-home-btn"
+            onClick={onGoHome || (() => setActiveTab("vault"))}
+            className="flex items-center gap-2 px-3.5 py-2 bg-[#070A10] hover:bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/60 hover:border-[#D4AF37] rounded-xl font-mono font-bold text-xs uppercase transition-all shadow-[0_0_12px_rgba(212,175,55,0.2)] active:scale-95 cursor-pointer"
+            title="Go Home (Vault)"
+          >
+            <Home className="w-4 h-4 text-[#D4AF37]" />
+            <span className="hidden sm:inline">Home</span>
+          </button>
+
+          {/* TOP #1 APEX BANK ZONE TAB SHORTCUT BUTTON */}
+          <button
+            id="header-nav-apexzone-btn"
+            onClick={() => setActiveTab("gmcgold")}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-mono font-extrabold text-xs uppercase transition-all shadow-md active:scale-95 cursor-pointer ${
+              activeTab === "gmcgold"
+                ? "bg-amber-400 text-black border-2 border-amber-300 shadow-[0_0_16px_rgba(234,179,8,0.6)]"
+                : "bg-gradient-to-r from-amber-500/20 via-amber-600/20 to-amber-950/40 text-amber-300 hover:text-white border-2 border-amber-500/70 hover:border-amber-400 shadow-[0_0_12px_rgba(212,175,55,0.3)] animate-pulse"
+            }`}
+            title="Launch Top #1 GMC Gold Apex Bank Zone Matrix"
+          >
+            <Crown className="w-4 h-4 text-amber-300" />
+            <span>TOP #1 APEX ZONE</span>
+          </button>
+        </div>
+
+        {/* Center: GMC Brand Title */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#D4AF37] to-amber-800 flex items-center justify-center font-black text-black text-xs shadow-[0_0_10px_rgba(212,175,55,0.4)]">
+            👑
+          </div>
+          <span className="text-sm sm:text-base font-black tracking-wider text-white uppercase hidden xs:inline">
+            GMC <span className="text-[#D4AF37]">TRADING AI</span>
+          </span>
+        </div>
+
+        {/* Right: Module Drawer & Account Terminal Status */}
+        <div className="flex items-center gap-2">
+          {onOpenMarketDataModal && (
+            <button
+              onClick={onOpenMarketDataModal}
+              id="open-market-data-hub-btn"
+              className="hidden sm:flex items-center gap-1.5 text-xs font-mono font-bold px-3 py-2 rounded-xl transition-all bg-[#070A10] hover:bg-[#131821] text-emerald-400 border border-emerald-500/40 shadow-sm cursor-pointer"
+              title="View Institutional Market Data Feeds"
+            >
+              <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+              <span>FEEDS ({latencyMs}ms)</span>
+            </button>
+          )}
+
           <button
             id="open-gmc-nav-drawer-btn"
             onClick={() => setIsNavDrawerOpen(!isNavDrawerOpen)}
-            aria-label="Open GMC Navigation Tabs Drawer"
-            className="px-3.5 py-1.5 bg-[#131821] hover:bg-[#1B2230] text-amber-300 border border-amber-500/40 rounded-xl font-mono font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-md active:scale-95"
-            title="Browse All 38+ GMC Navigation Tabs & AI Modules"
+            className="px-3 py-2 bg-[#070A10] hover:bg-[#131821] text-amber-300 border border-[#D4AF37]/40 hover:border-[#D4AF37] rounded-xl font-mono font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95"
+            title="Browse All GMC AI Modules"
           >
-            <LayoutGrid className="w-4 h-4 text-amber-400" />
-            <span className="font-extrabold uppercase tracking-tight">GMC NAVIGATION TABS ({visibleNavItems.length})</span>
-          </button>
-
-          {/* Upper Header Back & Home Navigation Buttons */}
-          <div className="flex items-center gap-2">
-            {onGoBack && (
-              <button
-                id="header-nav-back-btn"
-                onClick={onGoBack}
-                className="flex items-center gap-1.5 px-3 py-1.5 btn-3d-gold btn-3d-tactile rounded-xl text-xs font-mono font-bold"
-                title="Go Back"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Back</span>
-              </button>
-            )}
-
-            {onGoHome && (
-              <button
-                id="header-nav-home-btn"
-                onClick={onGoHome}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900/90 hover:bg-slate-800 text-amber-400 border border-amber-500/30 rounded-xl text-xs font-mono font-bold btn-3d-tactile"
-                title="Go Home (Vault)"
-              >
-                <Home className="w-3.5 h-3.5 text-amber-400" />
-                <span>Home</span>
-              </button>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-amber-400 via-amber-600 to-amber-900 rounded-xl flex items-center justify-center border border-amber-300/60 shadow-[0_0_15px_rgba(245,158,11,0.3)] shadow-amber-500/30">
-              <span className="text-black font-black text-xs tracking-wider drop-shadow-sm">3D</span>
-            </div>
-            <div>
-              <h1 className="text-sm sm:text-base font-black tracking-tight text-white flex items-center gap-2 font-mono">
-                🦇 BATMAN <span className="text-gradient-gold font-black">GMC 3D AI BRAIN</span>
-              </h1>
-            </div>
-          </div>
-        </div>
-
-        {/* Live Asset Selector Pills & Live Execution CTA */}
-        <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 no-scrollbar max-w-[200px] sm:max-w-none">
-            {SUPPORTED_ASSETS.map((asset) => {
-              const p = prices[asset.key] || { price: asset.basePrice, changePct: 0.1 };
-              const isActive = asset.key === activeAssetKey;
-              const pos = p.changePct >= 0;
-
-              return (
-                <button
-                  key={asset.key}
-                  id={`asset-pill-${asset.key}`}
-                  onClick={() => setActiveAssetKey(asset.key)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-mono transition-all flex items-center gap-1.5 border whitespace-nowrap ${
-                    isActive
-                      ? "bg-gradient-to-r from-amber-500/20 to-amber-700/20 text-white border-amber-500/80 shadow-[0_4px_12px_rgba(245,158,11,0.25)] font-bold"
-                      : "bg-[#0A0E17] text-slate-400 border-slate-800/80 hover:text-slate-200 hover:bg-slate-900/80"
-                  }`}
-                >
-                  <span className="font-bold text-slate-200">{asset.short}</span>
-                  <span className="text-amber-300 font-extrabold">${p.price.toLocaleString()}</span>
-                  <span className={`text-[10px] font-bold ${pos ? "text-emerald-400" : "text-rose-400"}`}>
-                    {pos ? "+" : ""}{p.changePct}%
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <button
-            onClick={onOpenLoginModal}
-            id="open-live-terminal-login-btn"
-            className={`flex items-center gap-1.5 text-[11px] font-mono font-bold px-3.5 py-1.5 rounded-xl transition-all shadow-lg uppercase tracking-wider ${
-              isLoggedIn
-                ? "bg-emerald-600/30 text-emerald-300 border border-emerald-500/60 hover:bg-emerald-600/40 shadow-emerald-600/20"
-                : "btn-3d-gold active:scale-95"
-            }`}
-          >
-            {isLoggedIn ? (
-              <>
-                <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="hidden xs:inline">VIP: {loggedInUser || "AHMED"}</span>
-              </>
-            ) : (
-              <>
-                <Lock className="w-3.5 h-3.5 text-white" />
-                <span className="hidden xs:inline">3D TERMINAL</span>
-              </>
-            )}
+            <LayoutGrid className="w-4 h-4 text-[#D4AF37]" />
+            <span className="hidden md:inline uppercase">MODULES</span>
           </button>
         </div>
-      </div>
-
-      {/* Quick Navigation Toolbar */}
-      <div className="bg-[#05070E] border-b border-amber-500/20 px-3 py-1.5 overflow-x-auto no-scrollbar flex items-center gap-2 font-mono text-xs">
-        <button
-          onClick={() => setIsNavDrawerOpen(true)}
-          className="px-3 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold flex items-center gap-1.5 whitespace-nowrap cursor-pointer transition-all"
-        >
-          <LayoutGrid className="w-3.5 h-3.5 text-amber-400" />
-          <span>📂 BROWSE ALL MODULES ({visibleNavItems.length})</span>
-        </button>
-
-        <span className="text-slate-700">|</span>
-
-        {/* Top Highlight Button for GMC GOLD */}
-        <button
-          id="quick-top-tool-gmcgold"
-          onClick={() => setActiveTab("gmcgold")}
-          className={`px-3 py-1.5 rounded-xl font-black text-xs flex items-center gap-2 transition-all border whitespace-nowrap ${
-            activeTab === "gmcgold"
-              ? "bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-black border-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.5)] scale-105"
-              : "bg-amber-500/10 text-amber-300 border-amber-500/40 hover:bg-amber-500/20"
-          }`}
-        >
-          <Crown className="w-4 h-4 text-amber-950 fill-amber-300 animate-pulse" />
-          <span>👑 GMC GOLD ZONE CARD</span>
-        </button>
-
-        {/* D3 Liquidity Heatmap Overlay Button */}
-        <button
-          id="quick-top-tool-d3heatmap-overlay"
-          onClick={() => {
-            if (onOpenHeatmapOverlay) {
-              onOpenHeatmapOverlay();
-            } else {
-              setActiveTab("d3heatmap");
-            }
-          }}
-          className="px-3 py-1.5 rounded-xl font-black text-xs flex items-center gap-1.5 transition-all border whitespace-nowrap bg-emerald-500/15 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/25 shadow-md shadow-emerald-500/10"
-        >
-          <Flame className="w-4 h-4 text-emerald-400 animate-pulse" />
-          <span>🔥 D3 HEATMAP OVERLAY</span>
-        </button>
-
-        <span className="text-slate-700">|</span>
-
-        {/* Secondary Top Tools */}
-        {visibleNavItems.slice(1, 7).map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              id={`top-quick-tab-${tab.id}`}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all whitespace-nowrap border flex items-center gap-1.5 ${
-                isActive
-                  ? "bg-blue-500/20 text-blue-300 border-blue-500/50"
-                  : "bg-slate-900/80 text-slate-400 border-slate-800 hover:text-white"
-              }`}
-            >
-              <Icon className="w-3 h-3 text-amber-400" />
-              <span>{tab.label.split(" ")[1] || tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Active Tab Sub-header for Mobile Quick Info */}
-      <div className="md:hidden px-4 py-2 bg-[#06080C] border-b border-slate-800/60 flex items-center justify-between text-xs font-mono">
-        <span className="text-slate-400">ACTIVE MODULE:</span>
-        <button
-          onClick={() => setIsNavDrawerOpen(true)}
-          className="text-amber-300 font-bold flex items-center gap-1 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-md"
-        >
-          <span>{activeItemLabel}</span>
-          <LayoutGrid className="w-3.5 h-3.5 ml-1 text-amber-400" />
-        </button>
-      </div>
-
-      {/* Primary Navigation Bar (Desktop Horizontal Strip) */}
-      <div className="hidden md:flex max-w-7xl mx-auto px-4 items-center justify-between overflow-x-auto py-1.5 bg-[#080808]">
-        <nav className="flex items-center gap-1 font-medium text-xs font-mono overflow-x-auto no-scrollbar py-1">
-          {visibleNavItems.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                id={`nav-tab-${tab.id}`}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-all whitespace-nowrap border ${
-                  isActive
-                    ? "bg-blue-500/10 text-blue-400 border-blue-500/30 font-bold shadow-sm"
-                    : "text-slate-400 border-transparent hover:text-slate-200 hover:bg-slate-900/60"
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5 text-amber-400" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </nav>
       </div>
 
       {/* FULL VERTICAL GMC NAVIGATION TABS DRAWER / MODAL (DESKTOP & MOBILE) */}

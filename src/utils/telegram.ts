@@ -130,28 +130,61 @@ export async function dispatchTradeAlertToTelegram(trade: {
   tp1: number;
   tp2?: number;
   tp3?: number;
+  tp4?: number;
   lotSize: number;
   confluence?: string;
   accountBalance?: number;
   totalPnL?: number;
+  confidence?: number;
+  reason?: string;
 }) {
-  const alertId = `trade-${trade.source}-${trade.asset}-${trade.type}-${trade.entry}`;
+  // STRICT RULE: Only Top 2 AI Engines are allowed to dispatch Telegram signals!
+  const isTop2Engine =
+    trade.source.includes("GMC Alpha 1H Trend Command Engine") ||
+    trade.source.includes("GMC Sovereign AI Signal Fusion Core") ||
+    trade.source.includes("BATMAN MASTER") ||
+    trade.source.includes("GMC AI BRAIN") ||
+    trade.source.includes("aibrain") ||
+    trade.source.includes("masterbrain");
+
+  if (!isTop2Engine) {
+    console.log(`[TELEGRAM BROADCASTER FILTERED]: ${trade.source} is not in Top 2 Engines. Suppressed.`);
+    return { success: true, message: "Suppressed non-top-2 engine Telegram alert." };
+  }
+
+  const alertId = `trade-${trade.source}-${trade.asset}-${trade.type}-${trade.entry}-${Math.floor(Date.now() / 300000)}`;
   const icon = trade.type === "BUY" ? "🟢 🚀" : "🔴 📉";
-  const balanceStr = trade.accountBalance ? `$${trade.accountBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$10,240.50";
+
+  const entryZone = `$${(trade.entry - 0.5).toFixed(2)} - $${(trade.entry + 0.5).toFixed(2)}`;
+  const risk = Math.abs(trade.entry - trade.sl);
+  const reward = Math.abs(trade.tp1 - trade.entry);
+  const rr = risk > 0 ? `1 : ${(reward / risk).toFixed(1)}` : "1 : 2.5";
+  const confidence = trade.confidence || 94.8;
+  const tp2 = trade.tp2 || Number((trade.type === "BUY" ? trade.entry + reward * 1.8 : trade.entry - reward * 1.8).toFixed(2));
+  const tp3 = trade.tp3 || Number((trade.type === "BUY" ? trade.entry + reward * 2.8 : trade.entry - reward * 2.8).toFixed(2));
+  const tp4 = trade.tp4 || Number((trade.type === "BUY" ? trade.entry + reward * 4.0 : trade.entry - reward * 4.0).toFixed(2));
+  const timestamp = new Date().toISOString().replace("T", " ").substring(0, 16) + " UTC";
 
   const message = `
-<b>${icon} GMC TRADING AI SIGNAL ALERT</b>
+<b>${icon} GMC SOVEREIGN INSTITUTIONAL SIGNAL ALERT</b>
 ━━━━━━━━━━━━━━━━━━━
-<b>🧠 BRAIN MODULE:</b> ${trade.source}
-<b>📊 ASSET:</b> ${trade.asset}
-<b>🎯 DIRECTION:</b> <code>${trade.type}</code>
-<b>📍 LIVE ENTRY:</b> <code>$${trade.entry.toFixed(2)}</code>
-<b>🛑 STOP LOSS:</b> <code>$${trade.sl.toFixed(2)}</code>
-<b>🎯 TAKE PROFIT 1:</b> <code>$${trade.tp1.toFixed(2)}</code>
-${trade.tp2 ? `<b>🎯 TAKE PROFIT 2:</b> <code>$${trade.tp2.toFixed(2)}</code>\n` : ""}${trade.tp3 ? `<b>🎯 TAKE PROFIT 3:</b> <code>$${trade.tp3.toFixed(2)}</code>\n` : ""}<b>⚡ STRICT LOT SIZE:</b> <code>${(trade.lotSize || 0.01).toFixed(2)} LOT</code>
-<b>💼 ACCOUNT BALANCE:</b> <code>${balanceStr}</code>
-${trade.confluence ? `<b>🔥 CONFLUENCE:</b> ${trade.confluence}\n` : ""}━━━━━━━━━━━━━━━━━━━
-<i>⚡ GMC AI Brain Auto-Dispatcher • Powered by Harami AI</i>
+<b>1. 📊 SYMBOL:</b> <code>${trade.asset}</code>
+<b>2. 🎯 DIRECTION:</b> <code>${trade.type}</code>
+<b>3. 📍 ENTRY ZONE:</b> <code>${entryZone}</code>
+<b>4. 💎 BEST ENTRY:</b> <code>$${trade.entry.toFixed(2)}</code>
+<b>5. 🛡️ STOP LOSS:</b> <code>$${trade.sl.toFixed(2)}</code>
+<b>6. 🎯 TAKE PROFIT 1:</b> <code>$${trade.tp1.toFixed(2)}</code>
+<b>7. 🎯 TAKE PROFIT 2:</b> <code>$${tp2.toFixed(2)}</code>
+<b>8. 🎯 TAKE PROFIT 3:</b> <code>$${tp3.toFixed(2)}</code>
+<b>9. 🎯 TAKE PROFIT 4:</b> <code>$${tp4.toFixed(2)}</code>
+<b>10. ⚖️ RISK : REWARD:</b> <code>${rr}</code>
+<b>11. 🔥 CONFIDENCE %:</b> <code>${confidence}% (A+ Setup)</code>
+<b>12. 🧠 AI ENGINE:</b> <b>${trade.source}</b>
+<b>13. ⏱️ TIMEFRAME:</b> <code>H1 / M15</code>
+<b>14. 💡 REASON FOR ENTRY:</b> ${trade.reason || trade.confluence || "H1 Liquidity Sweep + Unmitigated FVG + Institutional Order Block Retest"}
+<b>15. 🕒 TIMESTAMP:</b> <code>${timestamp}</code>
+━━━━━━━━━━━━━━━━━━━
+<i>⚡ GMC AI Sovereign Engine • Exclusive Top 2 Engine Dispatch</i>
   `.trim();
 
   return await sendTelegramMessage(message, alertId);

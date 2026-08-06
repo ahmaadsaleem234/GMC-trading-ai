@@ -29,11 +29,13 @@ import { GmcGoldZoneCardView } from "./components/GmcGoldZoneCardView";
 import { InstitutionalLiquidityHeatmapD3 } from "./components/InstitutionalLiquidityHeatmapD3";
 import { GmcLandingPage } from "./components/GmcLandingPage";
 import { EnterpriseAccessModal } from "./components/EnterpriseAccessModal";
+import { InstitutionalMarketDataHubModal } from "./components/InstitutionalMarketDataHubModal";
 import { AIBrainJournalView } from "./components/AIBrainJournalView";
 import { AdminDashboardView } from "./components/AdminDashboardView";
 import { TabDemoBanner } from "./components/TabDemoBanner";
+import { UniversalInstitutionalTabHeader } from "./components/UniversalInstitutionalTabHeader";
 import { useDemoAccounts } from "./useDemoAccounts";
-import { ArrowLeft, Home } from "lucide-react";
+import { ArrowLeft, Home, ChevronRight } from "lucide-react";
 import {
   MTFDojiView,
   CipherView,
@@ -65,6 +67,9 @@ import { sendTelegramMessage, dispatchTradeAlertToTelegram } from "./utils/teleg
 import { TradeLogEntry } from "./types";
 import { useLiveData, useCandleData } from "./useLiveData";
 import { useAutoTelegramBroadcaster } from "./useAutoTelegramBroadcaster";
+import { getModuleTitle } from "./utils/moduleRegistry";
+import { InstitutionalTelegramBroadcaster } from "./components/InstitutionalTelegramBroadcaster";
+import { getValidSession, createSession, clearSession } from "./utils/sessionManager";
 
 const INITIAL_TRADES: TradeLogEntry[] = [
   {
@@ -72,10 +77,10 @@ const INITIAL_TRADES: TradeLogEntry[] = [
     timestamp: "14:32:05",
     assetKey: "XAUUSD",
     type: "BUY",
-    entryPrice: 3314.5,
-    currentPrice: 3317.8,
-    stopLoss: 3305.0,
-    takeProfit: 3340.0,
+    entryPrice: 4234.5,
+    currentPrice: 4238.5,
+    stopLoss: 4205.0,
+    takeProfit: 4280.0,
     lotSize: 0.25,
     status: "TARGET_1_HIT",
     pnlUSD: 825.0,
@@ -165,13 +170,45 @@ export function App() {
   // Telegram Integration Modal State
   const [isTelegramModalOpen, setIsTelegramModalOpen] = useState<boolean>(false);
 
+  // Institutional Market Data Feeds Modal State
+  const [isMarketDataModalOpen, setIsMarketDataModalOpen] = useState<boolean>(false);
+
   // Institutional D3 Heatmap Overlay State
   const [isHeatmapOverlayOpen, setIsHeatmapOverlayOpen] = useState<boolean>(false);
 
   // WhatsApp Channel Timed Popup State (Once per visitor/session after 5-6 seconds)
   const [isWhatsAppChannelModalOpen, setIsWhatsAppChannelModalOpen] = useState<boolean>(false);
 
-  // 30-Minute Inactivity Auto-Logout Tracker
+  // 1. Restore Persistent Session automatically on page load / revisit (14-Day "Remember Me")
+  useEffect(() => {
+    const validSession = getValidSession();
+    if (validSession) {
+      setIsLoggedIn(true);
+      setLoggedInUser(validSession.username);
+      setActiveTab("gmcgold");
+    }
+  }, []);
+
+  const handleLoginSuccess = (username: string, rememberMe: boolean = true) => {
+    // Save secure session (14 days if rememberMe is true)
+    createSession(username, rememberMe, 14);
+    setIsLoggedIn(true);
+    setLoggedInUser(username);
+    setIsLoginModalOpen(false);
+    setIsEnterpriseModalOpen(false);
+    setActiveTab("gmcgold");
+  };
+
+  const handleLogout = () => {
+    clearSession();
+    setIsLoggedIn(false);
+    setLoggedInUser(null);
+    setIsLoginModalOpen(false);
+    setActiveTab("landing");
+    setIsEnterpriseModalOpen(true);
+  };
+
+  // 30-Minute Inactivity Tracker
   useEffect(() => {
     if (!isLoggedIn) return;
 
@@ -181,10 +218,13 @@ export function App() {
     const resetInactivityTimer = () => {
       clearTimeout(inactivityTimer);
       inactivityTimer = setTimeout(() => {
-        setIsLoggedIn(false);
-        setLoggedInUser(null);
-        setActiveTab("landing");
-        setIsEnterpriseModalOpen(true);
+        const session = getValidSession();
+        if (!session?.rememberMe) {
+          handleLogout();
+        } else {
+          // Keep persistent session intact, open login/lock modal to re-affirm session
+          setIsLoginModalOpen(true);
+        }
       }, INACTIVITY_LIMIT_MS);
     };
 
@@ -336,15 +376,8 @@ export function App() {
           onClose={() => setIsLoginModalOpen(false)}
           isLoggedIn={isLoggedIn}
           loggedInUser={loggedInUser}
-          onLoginSuccess={(username) => {
-            setIsLoggedIn(true);
-            setLoggedInUser(username);
-            setActiveTab("gmcgold");
-          }}
-          onLogout={() => {
-            setIsLoggedIn(false);
-            setLoggedInUser(null);
-          }}
+          onLoginSuccess={handleLoginSuccess}
+          onLogout={handleLogout}
           onContactWhatsApp={() => {
             window.open("https://chat.whatsapp.com/sample-gmc-trading-ai", "_blank");
           }}
@@ -394,6 +427,15 @@ export function App() {
         onOpenHeatmapOverlay={() => setIsHeatmapOverlayOpen(true)}
         onGoBack={handleGoBack}
         onGoHome={handleGoHome}
+        onOpenMarketDataModal={() => setIsMarketDataModalOpen(true)}
+      />
+
+      {/* Institutional Market Data Feeds Control Modal */}
+      <InstitutionalMarketDataHubModal
+        isOpen={isMarketDataModalOpen}
+        onClose={() => setIsMarketDataModalOpen(false)}
+        latencyMs={latencyMs}
+        isConnected={isConnected}
       />
 
       {/* Live Terminal Authentication Modal */}
@@ -402,15 +444,8 @@ export function App() {
         onClose={() => setIsLoginModalOpen(false)}
         isLoggedIn={isLoggedIn}
         loggedInUser={loggedInUser}
-        onLoginSuccess={(username) => {
-          setIsLoggedIn(true);
-          setLoggedInUser(username);
-        }}
-        onLogout={() => {
-          setIsLoggedIn(false);
-          setLoggedInUser(null);
-          setActiveTab("landing");
-        }}
+        onLoginSuccess={handleLoginSuccess}
+        onLogout={handleLogout}
         onContactWhatsApp={() => {
           window.open("https://chat.whatsapp.com/sample-gmc-trading-ai", "_blank");
         }}
@@ -434,64 +469,83 @@ export function App() {
 
       {/* Main View Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6 space-y-4">
-        {/* Quick-Switch Asset Monitoring Strip */}
-        <QuickSwitchAssetStrip
-          activeAssetKey={activeAssetKey}
-          setActiveAssetKey={setActiveAssetKey}
-          prices={prices}
-          onOpenRiskCopilot={handleOpenRiskCopilot}
-        />
+        {activeTab !== "vault" && (
+          <>
+            {/* Quick-Switch Asset Monitoring Strip */}
+            <QuickSwitchAssetStrip
+              activeAssetKey={activeAssetKey}
+              setActiveAssetKey={setActiveAssetKey}
+              prices={prices}
+              onOpenRiskCopilot={handleOpenRiskCopilot}
+            />
 
-        {/* Navigation Action Bar - Header Nav & Active Module Tracker */}
-        <div className="flex flex-wrap items-center justify-between gap-3 card-3d-gold p-3 rounded-2xl shadow-2xl font-mono text-xs">
-          <div className="flex items-center gap-2">
-            <button
-              id="global-nav-back-btn"
-              onClick={handleGoBack}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 btn-3d-gold btn-3d-tactile rounded-xl font-bold text-xs"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back</span>
-            </button>
+            {/* Navigation Action Bar - Header Nav & Active Module Tracker */}
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-[#070A10]/90 backdrop-blur-xl border border-[#D4AF37]/30 p-3 rounded-2xl shadow-xl font-mono text-xs">
+              <div className="flex items-center gap-2">
+                <button
+                  id="global-nav-back-btn"
+                  onClick={handleGoBack}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#070A10] hover:bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/60 rounded-xl font-bold text-xs transition-all active:scale-95 cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  <span>Back</span>
+                </button>
 
-            <button
-              id="global-nav-home-btn"
-              onClick={handleGoHome}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-900/90 hover:bg-slate-800 text-amber-400 border border-amber-500/30 rounded-xl font-bold btn-3d-tactile text-xs"
-            >
-              <Home className="w-3.5 h-3.5 text-amber-400" />
-              <span>Home</span>
-            </button>
+                <button
+                  id="global-nav-home-btn"
+                  onClick={handleGoHome}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#070A10] hover:bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/60 rounded-xl font-bold text-xs transition-all active:scale-95 cursor-pointer"
+                >
+                  <Home className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  <span>Home</span>
+                </button>
 
-            <button
-              onClick={() => handleSelectTab("landing")}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                activeTab === "landing"
-                  ? "bg-amber-500 text-slate-950 font-black shadow-[0_0_12px_rgba(245,179,1,0.4)]"
-                  : "bg-slate-900/90 hover:bg-slate-800 text-cyan-300 border border-cyan-500/30"
-              }`}
-            >
-              <span>🌐 Landing Portal</span>
-            </button>
+                <button
+                  onClick={() => handleSelectTab("landing")}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                    activeTab === "landing"
+                      ? "bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/60 font-black shadow-sm"
+                      : "bg-[#070A10] hover:bg-[#131821] text-amber-300 border border-[#D4AF37]/30"
+                  }`}
+                >
+                  <span>🌐 Landing Portal</span>
+                </button>
 
-            <span className="text-slate-600 hidden sm:inline">|</span>
-            <span className="text-amber-400/80 font-bold hidden sm:inline text-[11px] tracking-wider">3D AI BRAIN MATRIX</span>
-          </div>
+                <span className="text-slate-700 hidden sm:inline">|</span>
+                <span className="text-slate-400 font-bold hidden sm:inline text-[11px] tracking-wider">GMC AI MATRIX</span>
+              </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsTelegramModalOpen(true)}
-              className="px-3.5 py-1.5 bg-gradient-to-r from-sky-600/30 to-blue-600/30 hover:from-sky-600/40 hover:to-blue-600/40 text-sky-300 border border-sky-400/50 rounded-xl font-bold shadow-lg flex items-center gap-1.5 transition-all text-[11px]"
-              title="Configure Telegram Bot Alerts"
-            >
-              <span>✈️ TELEGRAM BOT</span>
-            </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsTelegramModalOpen(true)}
+                  className="px-3.5 py-1.5 bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-400/30 rounded-xl font-bold shadow-sm flex items-center gap-1.5 transition-all text-[11px]"
+                  title="Configure Telegram Bot Alerts"
+                >
+                  <span>✈️ TELEGRAM BOT</span>
+                </button>
 
-            <span className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-700/20 border border-amber-500/60 text-amber-300 font-extrabold rounded-xl uppercase tracking-tight text-[11px] shadow-inner">
-              {NAV_ITEMS.find((n) => n.id === activeTab)?.label || activeTab}
-            </span>
-          </div>
-        </div>
+                <span className="px-3.5 py-1.5 bg-[#D4AF37]/10 border border-[#D4AF37]/30 text-amber-300 font-bold rounded-xl uppercase tracking-tight text-[11px] shadow-sm flex items-center gap-1">
+                  <span>{NAV_ITEMS.find((n) => n.id === activeTab)?.label || activeTab}</span>
+                  <ChevronRight className="w-3 h-3 text-[#D4AF37] inline" />
+                </span>
+              </div>
+            </div>
+
+            {/* Universal Dynamic AI Tab Institutional Intelligence Header Card */}
+            <UniversalInstitutionalTabHeader
+              activeTab={activeTab}
+              tabTitle={getModuleTitle(activeTab)}
+              prices={prices}
+              currentPrice={currentPrice}
+            />
+
+            {/* Top 2 AI Engine Background Broadcaster */}
+            <InstitutionalTelegramBroadcaster
+              currentPrice={currentPrice}
+              assetKey={activeAssetKey}
+            />
+          </>
+        )}
 
         {activeTab === "landing" && (
           <GmcLandingPage
@@ -665,6 +719,8 @@ export function App() {
             isLoggedIn={isLoggedIn}
             loggedInUser={loggedInUser}
             onOpenLoginModal={() => setIsLoginModalOpen(true)}
+            prices={prices}
+            currentPrice={currentPrice}
           />
         )}
 
