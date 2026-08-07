@@ -206,11 +206,11 @@ export function calculateGoldTPSL(
 ): GoldTPSLResult {
   const isBuy = direction === "BUY";
   
-  // Standard Institutional Gold ATR SL distance ~$12.50 ($12.50 = 125 pips)
-  const slDistance = 12.50; 
-  const tp1Distance = 18.00; // TP1 = +180 pips
-  const tp2Distance = 35.00; // TP2 = +350 pips
-  const tp3Distance = 60.00; // TP3 = +600 pips
+  // Short Scalping Style TP Optimization for Gold Spot (XAUUSD)
+  const slDistance = 4.50; // $4.50 SL
+  const tp1Distance = 7.00; // TP1 = +$7
+  const tp2Distance = 10.00; // TP2 = +$10
+  const tp3Distance = 14.00; // TP3 = +$14
 
   const stopLoss = isBuy ? parseFloat((entryPrice - slDistance).toFixed(2)) : parseFloat((entryPrice + slDistance).toFixed(2));
   const takeProfit1 = isBuy ? parseFloat((entryPrice + tp1Distance).toFixed(2)) : parseFloat((entryPrice - tp1Distance).toFixed(2));

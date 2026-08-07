@@ -43,23 +43,21 @@ export function evaluateDualScenarioInstitutionalSetup(
   const decimals = 2;
   const isGold = true;
 
-  // ATR & Scale calculations for Gold Spot (XAUUSD)
-  let atr = Math.max(3.5, currentPrice * 0.0018);
+  // Short Scalping Style TP Optimization for Gold Spot (XAUUSD)
+  // TP1 = +$7 | TP2 = +$10 | TP3 = +$14 | TP4 = +$20 (Smart Runner)
+  // SL = $4.50 tight risk defense
 
   // 1. EVALUATE BUY SCENARIO
   const buyEntry = Number(currentPrice.toFixed(decimals));
-  const buyEntryLow = Number((currentPrice - atr * 0.25).toFixed(decimals));
-  const buyEntryHigh = Number((currentPrice + atr * 0.15).toFixed(decimals));
-  const buySl = Number((currentPrice - atr * 1.2).toFixed(decimals));
-  const buyTp1 = Number((currentPrice + atr * 1.8).toFixed(decimals));
-  const buyTp2 = Number((currentPrice + atr * 3.2).toFixed(decimals));
-  const buyTp3 = Number((currentPrice + atr * 5.0).toFixed(decimals));
-  const buyTp4 = Number((currentPrice + atr * 7.5).toFixed(decimals));
+  const buyEntryLow = Number((currentPrice - 0.80).toFixed(decimals));
+  const buyEntryHigh = Number((currentPrice + 0.50).toFixed(decimals));
+  const buySl = Number((currentPrice - 4.50).toFixed(decimals));
+  const buyTp1 = Number((currentPrice + 7.00).toFixed(decimals));
+  const buyTp2 = Number((currentPrice + 10.00).toFixed(decimals));
+  const buyTp3 = Number((currentPrice + 14.00).toFixed(decimals));
+  const buyTp4 = Number((currentPrice + 20.00).toFixed(decimals));
 
-  const buyRisk = Math.abs(buyEntry - buySl);
-  const buyReward = Math.abs(buyTp1 - buyEntry);
-  const buyRRValue = buyRisk > 0 ? (buyReward / buyRisk) : 0;
-  const buyRR = `1 : ${buyRRValue.toFixed(1)}`;
+  const buyRR = "1 : 1.6";
 
   // Simulated live institutional confluence factors
   const seed = (Math.floor(Date.now() / 60000) * 17) % 100;
@@ -67,18 +65,15 @@ export function evaluateDualScenarioInstitutionalSetup(
 
   // 2. EVALUATE SELL SCENARIO
   const sellEntry = Number(currentPrice.toFixed(decimals));
-  const sellEntryLow = Number((currentPrice - atr * 0.15).toFixed(decimals));
-  const sellEntryHigh = Number((currentPrice + atr * 0.25).toFixed(decimals));
-  const sellSl = Number((currentPrice + atr * 1.2).toFixed(decimals));
-  const sellTp1 = Number((currentPrice - atr * 1.8).toFixed(decimals));
-  const sellTp2 = Number((currentPrice - atr * 3.2).toFixed(decimals));
-  const sellTp3 = Number((currentPrice - atr * 5.0).toFixed(decimals));
-  const sellTp4 = Number((currentPrice - atr * 7.5).toFixed(decimals));
+  const sellEntryLow = Number((currentPrice - 0.50).toFixed(decimals));
+  const sellEntryHigh = Number((currentPrice + 0.80).toFixed(decimals));
+  const sellSl = Number((currentPrice + 4.50).toFixed(decimals));
+  const sellTp1 = Number((currentPrice - 7.00).toFixed(decimals));
+  const sellTp2 = Number((currentPrice - 10.00).toFixed(decimals));
+  const sellTp3 = Number((currentPrice - 14.00).toFixed(decimals));
+  const sellTp4 = Number((currentPrice - 20.00).toFixed(decimals));
 
-  const sellRisk = Math.abs(sellSl - sellEntry);
-  const sellReward = Math.abs(sellEntry - sellTp1);
-  const sellRRValue = sellRisk > 0 ? (sellReward / sellRisk) : 0;
-  const sellRR = `1 : ${sellRRValue.toFixed(1)}`;
+  const sellRR = "1 : 1.6";
 
   const sellScore = Number((86 + ((seed + 5) % 10) + Math.cos(currentPrice) * 2).toFixed(1));
 
@@ -133,18 +128,6 @@ export function evaluateDualScenarioInstitutionalSetup(
   if (winner.confidenceScore < 85.0) {
     winner.passedRejectionFilters = false;
     winner.rejectionReason = "Institutional Confidence Score below 85% threshold.";
-    return null;
-  }
-
-  if (winner.direction === "BUY" && buyRRValue < 1.4) {
-    winner.passedRejectionFilters = false;
-    winner.rejectionReason = "Risk:Reward below 1:1.4 threshold.";
-    return null;
-  }
-
-  if (winner.direction === "SELL" && sellRRValue < 1.4) {
-    winner.passedRejectionFilters = false;
-    winner.rejectionReason = "Risk:Reward below 1:1.4 threshold.";
     return null;
   }
 

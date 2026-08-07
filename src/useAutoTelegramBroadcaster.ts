@@ -136,6 +136,36 @@ export function useAutoTelegramBroadcaster() {
       isProcessingRef.current = true;
 
       try {
+        // Sync with 24/7 background server state
+        try {
+          const syncRes = await fetch("/api/telegram/active-signal");
+          if (syncRes.ok) {
+            const syncData = await syncRes.json();
+            if (syncData.ok && syncData.activeTrade) {
+              const serverTrade = syncData.activeTrade;
+              activeTradeRef.current = {
+                id: serverTrade.id,
+                source: "🥇 TOP 1 – GMC GOLD Apex Bank-Zone Matrix",
+                asset: "XAUUSD",
+                type: serverTrade.direction,
+                entry: serverTrade.entry,
+                sl: serverTrade.sl,
+                tp1: serverTrade.tp1,
+                tp2: serverTrade.tp2,
+                tp3: serverTrade.tp3,
+                tp4: serverTrade.tp4,
+                lotSize: 0.01,
+                confluence: serverTrade.reason,
+                status: "OPEN",
+                createdAt: serverTrade.createdAt,
+              };
+              localStorage.setItem(ACTIVE_TRADE_KEY, JSON.stringify(activeTradeRef.current));
+            }
+          }
+        } catch (e) {
+          // Ignore sync network errors
+        }
+
         const active = activeTradeRef.current;
 
         if (!active) {
