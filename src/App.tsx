@@ -578,7 +578,7 @@ export function App() {
                   stopLoss: currentPrice * 0.992,
                   takeProfit: currentPrice * 1.018,
                   lotSize: 0.1,
-                  signalSource: "👑 GMC GOLD Zone Card & Bank Level AI Brain",
+                  signalSource: "🥇 TOP 1 – GMC GOLD Apex Bank-Zone Matrix",
                 })
               }
             />

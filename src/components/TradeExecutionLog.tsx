@@ -32,6 +32,20 @@ export const TradeExecutionLog: React.FC<TradeExecutionLogProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
   const [filterType, setFilterType] = useState<string>("ALL");
+  const [filterSource, setFilterSource] = useState<string>("ALL");
+
+  const isTop1Trade = (t: TradeLogEntry) => {
+    const src = (t.signalSource || "").toLowerCase();
+    return (
+      src.includes("top 1") ||
+      src.includes("gmc gold") ||
+      src.includes("apex bank-zone") ||
+      src.includes("gmcgold") ||
+      src.includes("zone card")
+    );
+  };
+
+  const top1TradesCount = trades.filter(isTop1Trade).length;
 
   const filteredTrades = trades.filter((t) => {
     const matchesSearch =
@@ -41,8 +55,10 @@ export const TradeExecutionLog: React.FC<TradeExecutionLogProps> = ({
 
     const matchesStatus = filterStatus === "ALL" || t.status === filterStatus;
     const matchesType = filterType === "ALL" || t.type === filterType;
+    const matchesSource =
+      filterSource === "ALL" || (filterSource === "TOP1" && isTop1Trade(t));
 
-    return matchesSearch && matchesStatus && matchesType;
+    return matchesSearch && matchesStatus && matchesType && matchesSource;
   });
 
   const getStatusBadge = (status: TradeLogEntry["status"]) => {
@@ -147,7 +163,7 @@ export const TradeExecutionLog: React.FC<TradeExecutionLogProps> = ({
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-[#05070E] p-3 rounded-xl border border-slate-800/80 text-xs">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-[#05070E] p-3 rounded-xl border border-slate-800/80 text-xs">
         {/* Search */}
         <div className="relative flex-1">
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-500" />
@@ -160,10 +176,40 @@ export const TradeExecutionLog: React.FC<TradeExecutionLogProps> = ({
           />
         </div>
 
-        {/* Filter Dropdowns */}
+        {/* Quick TOP 1 AI Brain Filter Button & Dropdowns */}
         <div className="flex flex-wrap items-center gap-2">
+          {/* TOP 1 Quick Toggle Button */}
+          <button
+            onClick={() => setFilterSource(filterSource === "TOP1" ? "ALL" : "TOP1")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 border shadow-sm ${
+              filterSource === "TOP1"
+                ? "bg-amber-400/20 text-amber-300 border-amber-400/80 shadow-[0_0_12px_rgba(234,179,8,0.4)] animate-pulse"
+                : "bg-black/50 text-slate-300 border-slate-800 hover:text-amber-300 hover:border-amber-400/50"
+            }`}
+            title="Filter specifically for 🥇 TOP 1 AI Brain signals that match Telegram broadcasts"
+          >
+            <span>🥇 TOP 1 AI BRAIN ONLY</span>
+            <span className="px-1.5 py-0.2 bg-amber-400/30 text-amber-200 text-[10px] rounded-full font-extrabold ml-0.5">
+              {top1TradesCount}
+            </span>
+          </button>
+
+          {/* Source Dropdown */}
           <div className="flex items-center gap-1 bg-black/50 border border-slate-800 px-2.5 py-1.5 rounded-lg text-slate-300">
             <Filter className="w-3.5 h-3.5 text-slate-400" />
+            <span className="text-[10px] text-slate-500 uppercase font-bold">SOURCE:</span>
+            <select
+              value={filterSource}
+              onChange={(e) => setFilterSource(e.target.value)}
+              className="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer"
+            >
+              <option value="ALL" className="bg-slate-900 text-white">ALL SOURCES</option>
+              <option value="TOP1" className="bg-slate-900 text-amber-300 font-bold">🥇 TOP 1 AI BRAIN ONLY</option>
+            </select>
+          </div>
+
+          {/* Type Dropdown */}
+          <div className="flex items-center gap-1 bg-black/50 border border-slate-800 px-2.5 py-1.5 rounded-lg text-slate-300">
             <span className="text-[10px] text-slate-500 uppercase font-bold">TYPE:</span>
             <select
               value={filterType}
@@ -176,6 +222,7 @@ export const TradeExecutionLog: React.FC<TradeExecutionLogProps> = ({
             </select>
           </div>
 
+          {/* Status Dropdown */}
           <div className="flex items-center gap-1 bg-black/50 border border-slate-800 px-2.5 py-1.5 rounded-lg text-slate-300">
             <span className="text-[10px] text-slate-500 uppercase font-bold">STATUS:</span>
             <select
@@ -220,11 +267,16 @@ export const TradeExecutionLog: React.FC<TradeExecutionLogProps> = ({
               filteredTrades.map((trade) => {
                 const isBuy = trade.type === "BUY";
                 const isPosPnL = trade.pnlUSD >= 0;
+                const isTop1 = isTop1Trade(trade);
 
                 return (
                   <tr
                     key={trade.id}
-                    className="hover:bg-slate-900/40 transition-colors group"
+                    className={`transition-colors group ${
+                      isTop1
+                        ? "bg-amber-500/10 hover:bg-amber-500/15 border-l-4 border-l-amber-400"
+                        : "hover:bg-slate-900/40"
+                    }`}
                   >
                     {/* Timestamp & Asset */}
                     <td className="py-3 px-4">
@@ -235,7 +287,14 @@ export const TradeExecutionLog: React.FC<TradeExecutionLogProps> = ({
                           }`}
                         />
                         <div>
-                          <div className="font-bold text-white uppercase">{trade.assetKey}</div>
+                          <div className="font-bold text-white uppercase flex items-center gap-1.5">
+                            <span>{trade.assetKey}</span>
+                            {isTop1 && (
+                              <span className="px-1.5 py-0.2 bg-amber-400/20 text-amber-300 border border-amber-400/40 rounded text-[9px] font-black uppercase tracking-wider">
+                                🥇 TOP 1
+                              </span>
+                            )}
+                          </div>
                           <div className="text-[10px] text-slate-500">{trade.timestamp}</div>
                         </div>
                       </div>
@@ -255,7 +314,15 @@ export const TradeExecutionLog: React.FC<TradeExecutionLogProps> = ({
                         </span>
                         <span className="text-slate-300 font-bold">{trade.lotSize} LOTS</span>
                       </div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">{trade.signalSource}</div>
+                      <div className="flex flex-col gap-0.5 mt-0.5">
+                        <span className="text-[10px] text-slate-400 font-semibold">{trade.signalSource}</span>
+                        {isTop1 && (
+                          <span className="text-[9px] text-amber-300/90 font-bold flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                            TELEGRAM MATCH VERIFIED
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Entry Price */}
