@@ -25,6 +25,7 @@ import { playAlertChime } from "../utils/audioAlert";
 import { dispatchTradeAlertToTelegram, dispatchSLTPResultToTelegram } from "../utils/telegram";
 import { getOrCreateLockedSetup, clearOrResetLockedSetup, LockedTradeSetup } from "../utils/tradeSetupManager";
 import { LockedSetupBanner } from "./LockedSetupBanner";
+import { MT5AutoTradingDashboard } from "./MT5AutoTradingDashboard";
 
 interface HaramiAIViewProps {
   currentPrice: number;
@@ -297,6 +298,10 @@ export function HaramiAIView({
             </div>
           ))}
         </div>
+      </div>
+      {/* MT5 Auto-Trading & Account Live Dashboard */}
+      <div className="pt-4 border-t border-slate-800">
+        <MT5AutoTradingDashboard />
       </div>
     </div>
   );

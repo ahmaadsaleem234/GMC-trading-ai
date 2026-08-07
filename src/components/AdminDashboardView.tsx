@@ -64,6 +64,8 @@ import {
   BlockedIpItem,
 } from "../utils/userSessionTracker";
 
+import { MT5AutoTradingDashboard } from "./MT5AutoTradingDashboard";
+
 interface AdminDashboardViewProps {
   isLoggedIn: boolean;
   loggedInUser: string | null;
@@ -78,8 +80,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   onForceLogoutUser,
 }) => {
   const [activeTab, setActiveTab] = useState<
-    "overview" | "sessions" | "users" | "ipblock" | "telegram" | "audit" | "analytics"
-  >("overview");
+    "overview" | "mt5" | "sessions" | "users" | "ipblock" | "telegram" | "audit" | "analytics"
+  >("mt5");
 
   // Real-time state
   const [sessions, setSessions] = useState<UserSessionData[]>([]);
@@ -577,6 +579,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         {/* Tab Navigation Pill Bar */}
         <div className="flex items-center gap-2 overflow-x-auto pt-5 mt-4 border-t border-slate-800/80 no-scrollbar font-mono text-xs">
           <button
+            onClick={() => setActiveTab("mt5")}
+            className={`px-4 py-2 rounded-xl font-bold flex items-center gap-2 transition-all border whitespace-nowrap ${
+              activeTab === "mt5"
+                ? "bg-amber-500/20 text-amber-300 border-amber-500/60 shadow-lg shadow-amber-500/10"
+                : "bg-slate-900/60 text-slate-400 border-slate-800 hover:text-white"
+            }`}
+          >
+            <Zap className="w-4 h-4 text-amber-400 fill-current" />
+            <span>🤖 MT5 Auto-Trading &amp; AI Control</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab("overview")}
             className={`px-4 py-2 rounded-xl font-bold flex items-center gap-2 transition-all border whitespace-nowrap ${
               activeTab === "overview"
@@ -661,6 +675,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           </button>
         </div>
       </div>
+
+      {/* TAB 0: MT5 AUTO-TRADING & AI CONTROL */}
+      {activeTab === "mt5" && (
+        <div className="animate-fade-in">
+          <MT5AutoTradingDashboard />
+        </div>
+      )}
 
       {/* TAB 1: OVERVIEW & SYSTEM STATUS */}
       {activeTab === "overview" && (
