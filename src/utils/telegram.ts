@@ -210,7 +210,7 @@ export async function dispatchTradeAlertToTelegram(trade: {
   const timestamp = new Date().toISOString().replace("T", " ").substring(0, 16) + " UTC";
 
   const message = `
-<b>${icon} 🥇 TOP 1 AI BRAIN – INSTITUTIONAL SIGNAL ALERT</b>
+<b>${icon} 🔥 HARAMI AI – INSTITUTIONAL SIGNAL ALERT</b>
 ━━━━━━━━━━━━━━━━━━━
 <b>1. 📊 SYMBOL:</b> <code>${trade.asset}</code>
 <b>2. 🎯 DIRECTION:</b> <code>${trade.type}</code>
@@ -223,12 +223,12 @@ export async function dispatchTradeAlertToTelegram(trade: {
 <b>9. 🎯 TAKE PROFIT 4:</b> <code>$${tp4.toFixed(2)}</code>
 <b>10. ⚖️ RISK : REWARD:</b> <code>${rr}</code>
 <b>11. 🔥 CONFIDENCE %:</b> <code>${confidence}% (A+ Setup)</code>
-<b>12. 🧠 AI ENGINE:</b> <b>🥇 TOP 1 – GMC GOLD Apex Bank-Zone Matrix</b>
-<b>13. ⏱️ TIMEFRAME:</b> <code>H1 / M15</code>
-<b>14. 💡 REASON FOR ENTRY:</b> ${trade.reason || trade.confluence || "Apex Bank-Zone Order Block Sweep + Unmitigated FVG Retest"}
+<b>12. 🧠 AI ENGINE:</b> <b>Harami AI</b>
+<b>13. ⏱️ TIMEFRAME:</b> <code>5m / M15</code>
+<b>14. 💡 REASON FOR ENTRY:</b> ${trade.reason || trade.confluence || "Order Block Sweep + Unmitigated FVG Retest"}
 <b>15. 🕒 TIMESTAMP:</b> <code>${timestamp}</code>
 ━━━━━━━━━━━━━━━━━━━
-<i>⚡ GMC AI Sovereign Engine • Exclusive 🥇 TOP 1 AI Brain Dispatch</i>
+<i>⚡ Harami AI Engine • Exclusive Signal Dispatch</i>
   `.trim();
 
   return await sendTelegramMessage(message, alertId);
@@ -250,16 +250,16 @@ export async function dispatchSLTPResultToTelegram(result: {
   const balanceStr = result.accountBalance ? `$${result.accountBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$10,257.00";
 
   const message = `
-<b>${icon} 🥇 TOP 1 AI BRAIN – TRADE OUTCOME NOTIFICATION</b>
+<b>${icon} 🔥 HARAMI AI – TRADE OUTCOME NOTIFICATION</b>
 ━━━━━━━━━━━━━━━━━━━
-<b>🧠 BRAIN MODULE:</b> 🥇 TOP 1 – GMC GOLD Apex Bank-Zone Matrix
+<b>🧠 BRAIN MODULE:</b> Harami AI
 <b>📊 ASSET:</b> ${result.asset} (${result.type})
 <b>STATUS:</b> <code>${statusText}</code>
 <b>EXIT PRICE:</b> <code>$${result.price.toFixed(2)}</code>
 <b>NET PROFIT/LOSS:</b> <code>${result.pnlUSD >= 0 ? "+" : ""}$${result.pnlUSD.toFixed(2)}</code>
 <b>💼 UPDATED BALANCE:</b> <code>${balanceStr}</code>
 ━━━━━━━━━━━━━━━━━━━
-<i>⚡ GMC Risk Defense • Trade Closed & Completed</i>
+<i>⚡ Harami AI • Trade Closed & Completed</i>
   `.trim();
 
   return await sendTelegramMessage(message, alertId);

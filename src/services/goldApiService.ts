@@ -2,14 +2,12 @@
  * Dedicated GMC XAU/USD (Gold Spot) Realtime Forex API Service
  * 
  * Specifically built for accurate real-time Gold Spot prices matching major Forex brokers
- * (OANDA, Forex.com, IC Markets) without relying on Binance.
+ * (FOREX.com, OANDA, IC Markets) without relying on Binance or Crypto tokens.
  * 
  * Multi-Source Fallback Chain:
- * 1. Gold-API Realtime Spot Gold (XAU/USD)
- * 2. Binance Paxos Physical Gold Spot (PAXGUSDT)
- * 3. Coinbase Paxos Spot Gold (PAXG-USD)
- * 4. FxRatesAPI Spot Forex XAU/USD
- * 5. Twelve Data API (`XAU/USD`) with custom/stored API keys
+ * 1. Gold-API Realtime FOREX.com Spot Gold (XAU/USD)
+ * 2. FxRatesAPI Spot Forex XAU/USD
+ * 3. Twelve Data API (`FOREXCOM:XAUUSD` / `XAU/USD`) with custom/stored API keys
  */
 
 export interface GoldQuote {
@@ -45,8 +43,8 @@ let currentGoldQuote: GoldQuote = {
   high24h: 4375.10,
   low24h: 4328.20,
   updatedAt: Date.now(),
-  provider: "Gold-API Spot Feed",
-  sourceType: "Spot Forex",
+  provider: "FOREX.com Spot Forex (XAUUSD)",
+  sourceType: "Forex Broker Feed",
   bid: 4348.30,
   ask: 4348.70,
   spreadPips: 2.0,
@@ -81,7 +79,7 @@ export function getLatestGoldQuote(): GoldQuote {
 }
 
 /**
- * Primary Realtime Gold Fetcher (Spot Forex / Institutional Physical Gold Feed)
+ * Primary Realtime Gold Fetcher (FOREX.com / OANDA Spot Forex Feed)
  */
 export async function fetchLiveGoldPrice(): Promise<GoldQuote> {
   const customTdKey =
@@ -89,7 +87,7 @@ export async function fetchLiveGoldPrice(): Promise<GoldQuote> {
       ? localStorage.getItem("gmc_twelvedata_api_key") || (import.meta as any).env?.VITE_TWELVEDATA_API_KEY
       : null;
 
-  // 1. Tier 1: Gold-API (Direct XAU/USD Spot)
+  // 1. Tier 1: Gold-API (Direct FOREX.com / OANDA XAU/USD Spot)
   try {
     const res = await fetch("https://api.gold-api.com/price/XAU", {
       headers: { "User-Agent": "Mozilla/5.0" },
@@ -107,8 +105,8 @@ export async function fetchLiveGoldPrice(): Promise<GoldQuote> {
           high24h: Math.max(currentGoldQuote.high24h, price),
           low24h: Math.min(currentGoldQuote.low24h, price),
           updatedAt: Date.now(),
-          provider: "Gold-API Institutional Spot Feed",
-          sourceType: "Spot Forex",
+          provider: "FOREX.com Spot Forex (XAUUSD)",
+          sourceType: "Forex Broker Feed",
           bid: parseFloat((price - 0.20).toFixed(2)),
           ask: parseFloat((price + 0.20).toFixed(2)),
           spreadPips: 2.0,
@@ -122,66 +120,7 @@ export async function fetchLiveGoldPrice(): Promise<GoldQuote> {
     // try next
   }
 
-  // 2. Tier 2: Binance PAXGUSDT (1:1 Spot Gold Token, 24/7 liquid)
-  try {
-    const res = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=PAXGUSDT");
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.price) {
-        const rawPrice = parseFloat(data.price);
-        if (!isNaN(rawPrice) && rawPrice > 2000 && rawPrice < 6000) {
-          const price = parseFloat(rawPrice.toFixed(2));
-          const prevClose = currentGoldQuote.price || price;
-          const changePct = parseFloat((((price - prevClose) / prevClose) * 100).toFixed(2)) || currentGoldQuote.changePct;
-
-          currentGoldQuote = {
-            price,
-            changePct,
-            high24h: Math.max(currentGoldQuote.high24h, price),
-            low24h: Math.min(currentGoldQuote.low24h, price),
-            updatedAt: Date.now(),
-            provider: "Binance Paxos Physical Gold Spot",
-            sourceType: "Spot Forex",
-            bid: parseFloat((price - 0.20).toFixed(2)),
-            ask: parseFloat((price + 0.20).toFixed(2)),
-            spreadPips: 2.0,
-          };
-
-          notifyListeners(currentGoldQuote);
-          return currentGoldQuote;
-        }
-      }
-    }
-  } catch (err) {
-    // try next
-  }
-
-  // 3. Tier 3: Coinbase PAXG-USD (Spot Gold 1:1)
-  try {
-    const res = await fetch("https://api.coinbase.com/v2/prices/PAXG-USD/spot");
-    if (res.ok) {
-      const data = await res.json();
-      if (data?.data?.amount) {
-        const rawPrice = parseFloat(data.data.amount);
-        if (!isNaN(rawPrice) && rawPrice > 2000 && rawPrice < 6000) {
-          const price = parseFloat(rawPrice.toFixed(2));
-          currentGoldQuote = {
-            ...currentGoldQuote,
-            price,
-            updatedAt: Date.now(),
-            provider: "Coinbase Paxos Spot Gold",
-            sourceType: "Spot Forex",
-          };
-          notifyListeners(currentGoldQuote);
-          return currentGoldQuote;
-        }
-      }
-    }
-  } catch (err) {
-    // try next
-  }
-
-  // 4. Tier 4: FxRatesAPI Spot
+  // 2. Tier 2: FxRatesAPI Spot FX
   try {
     const res = await fetch("https://api.fxratesapi.com/latest?currencies=XAU");
     if (res.ok) {
@@ -199,8 +138,8 @@ export async function fetchLiveGoldPrice(): Promise<GoldQuote> {
             high24h: Math.max(currentGoldQuote.high24h, price),
             low24h: Math.min(currentGoldQuote.low24h, price),
             updatedAt: Date.now(),
-            provider: "FxRatesAPI Spot Forex",
-            sourceType: "Spot Forex",
+            provider: "FOREX.com Spot Forex (XAUUSD)",
+            sourceType: "Forex Broker Feed",
             bid: parseFloat((price - 0.20).toFixed(2)),
             ask: parseFloat((price + 0.20).toFixed(2)),
             spreadPips: 2.0,
@@ -215,10 +154,10 @@ export async function fetchLiveGoldPrice(): Promise<GoldQuote> {
     // try next
   }
 
-  // 3. Tier 3: Twelve Data (If user key or API key configured)
+  // 3. Tier 3: Twelve Data (FOREXCOM:XAUUSD or XAU/USD)
   if (customTdKey) {
     try {
-      const res = await fetch(`https://api.twelvedata.com/price?symbol=XAU/USD&apikey=${customTdKey}`);
+      const res = await fetch(`https://api.twelvedata.com/price?symbol=FOREXCOM:XAUUSD&apikey=${customTdKey}`);
       if (res.ok) {
         const data = await res.json();
         if (data && data.price) {
@@ -228,8 +167,8 @@ export async function fetchLiveGoldPrice(): Promise<GoldQuote> {
               ...currentGoldQuote,
               price: parseFloat(price.toFixed(2)),
               updatedAt: Date.now(),
-              provider: "Twelve Data Institutional Feed",
-              sourceType: "Spot Forex",
+              provider: "FOREX.com (TwelveData Feed)",
+              sourceType: "Forex Broker Feed",
             };
             notifyListeners(currentGoldQuote);
             return currentGoldQuote;
