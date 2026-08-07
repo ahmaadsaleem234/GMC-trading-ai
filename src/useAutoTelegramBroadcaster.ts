@@ -172,7 +172,8 @@ export function useAutoTelegramBroadcaster() {
           }
         }
       } catch (err) {
-        console.error("[GMC AI Brain] Broadcaster sync error:", err);
+        // Silent graceful fallback if network sync pauses temporarily
+        console.warn("[GMC AI Brain] Broadcaster sync standby:", err instanceof Error ? err.message : err);
       } finally {
         isProcessingRef.current = false;
       }
