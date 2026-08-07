@@ -10,16 +10,24 @@ export interface TelegramConfig {
 
 const STORAGE_KEY = "gmc_telegram_config";
 
+export function cleanTelegramInput(str?: string): string {
+  if (!str) return "";
+  return str.replace(/[\u200B-\u200D\uFEFF\u00A0\r\n\s]/g, "").trim();
+}
+
 export function getTelegramConfig(): TelegramConfig {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
+      parsed.botToken = cleanTelegramInput(parsed.botToken);
+      parsed.chatId = cleanTelegramInput(parsed.chatId);
+
       // Auto upgrade old expired tokens to current active bot token
-      if (!parsed.botToken || parsed.botToken.trim() === "" || parsed.botToken.includes("8995493734")) {
+      if (!parsed.botToken || parsed.botToken === "" || parsed.botToken.includes("8995493734")) {
         parsed.botToken = "8935835253:AAGWp1IeU9yA6wh2XmlcIE_W4ZAv4MIhA28";
       }
-      if (!parsed.chatId || parsed.chatId.trim() === "") {
+      if (!parsed.chatId || parsed.chatId === "") {
         parsed.chatId = "5218548758";
       }
       parsed.enabled = true;
@@ -41,7 +49,24 @@ export function getTelegramConfig(): TelegramConfig {
 
 export function saveTelegramConfig(config: TelegramConfig): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+    const cleaned: TelegramConfig = {
+      ...config,
+      botToken: cleanTelegramInput(config.botToken),
+      chatId: cleanTelegramInput(config.chatId),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
+
+    // Sync credentials directly to 24/7 server background broadcaster
+    if (cleaned.botToken || cleaned.chatId) {
+      fetch("/api/telegram/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          botToken: cleaned.botToken,
+          chatId: cleaned.chatId,
+        }),
+      }).catch(() => {});
+    }
   } catch (e) {
     console.error("Failed to save Telegram config", e);
   }
@@ -50,74 +75,96 @@ export function saveTelegramConfig(config: TelegramConfig): void {
 // Track sent messages to prevent duplicates / spam
 const sentAlertCache = new Set<string>();
 
-export async function sendTelegramMessage(messageText: string, alertId?: string): Promise<{ success: boolean; message: string }> {
-  const config = getTelegramConfig();
-
-  if (!config.enabled || !config.botToken.trim() || !config.chatId.trim()) {
-    return { success: false, message: "Telegram integration is disabled or credentials are missing." };
-  }
-
-  if (alertId) {
-    if (sentAlertCache.has(alertId)) {
-      return { success: true, message: "Alert already dispatched (duplicate suppressed)." };
-    }
-    sentAlertCache.add(alertId);
-    // Limit cache size
-    if (sentAlertCache.size > 200) {
-      const first = sentAlertCache.values().next().value;
-      if (first) sentAlertCache.delete(first);
-    }
-  }
-
+export async function sendTelegramMessage(
+  messageText: string,
+  alertId?: string,
+  overrideConfig?: { botToken?: string; chatId?: string }
+): Promise<{ success: boolean; message: string }> {
   try {
-    // 1. Try server endpoint first (bypasses browser CORS & adblockers)
-    const response = await fetch("/api/telegram/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text: messageText,
-        botToken: config.botToken.trim(),
-        chatId: config.chatId.trim(),
-      }),
-    });
+    const config = getTelegramConfig();
 
-    const data = await response.json();
-    if (data.ok) {
-      if (data.activeToken && data.activeToken !== config.botToken) {
-        saveTelegramConfig({ ...config, botToken: data.activeToken });
-      }
-      return { success: true, message: "Telegram signal dispatched successfully!" };
+    const token = cleanTelegramInput(overrideConfig?.botToken || config.botToken);
+    const chatId = cleanTelegramInput(overrideConfig?.chatId || config.chatId);
+
+    if (!token || !chatId) {
+      return { success: false, message: "❌ Telegram Bot Token & Chat ID are required." };
     }
 
-    // Direct browser fallback if server endpoint had non-ok status
+    if (alertId) {
+      if (sentAlertCache.has(alertId)) {
+        return { success: true, message: "Alert already dispatched (duplicate suppressed)." };
+      }
+      sentAlertCache.add(alertId);
+      if (sentAlertCache.size > 200) {
+        const first = sentAlertCache.values().next().value;
+        if (first) sentAlertCache.delete(first);
+      }
+    }
+
+    // Method 1: Try Server Proxy Route /api/telegram/send first (prevents CORS & mobile fetch quirks on external domains)
     try {
-      const activeToken = data.activeToken || config.botToken.trim();
-      const directUrl = `https://api.telegram.org/bot${activeToken}/sendMessage`;
+      const response = await fetch("/api/telegram/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: messageText,
+          botToken: token,
+          chatId: chatId,
+        }),
+      });
+
+      const contentType = response.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        const data = await response.json();
+        if (data.ok) {
+          return { success: true, message: "✅ Telegram signal dispatched successfully to channel!" };
+        }
+        if (data.error) {
+          console.warn("Server route returned error:", data.error);
+        }
+      }
+    } catch (serverErr) {
+      console.warn("Server proxy Telegram send failed, trying direct browser API...", serverErr);
+    }
+
+    // Method 2: Direct Telegram Bot API Call
+    try {
+      const directUrl = `https://api.telegram.org/bot${token}/sendMessage`;
       const directRes = await fetch(directUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          chat_id: config.chatId.trim(),
+          chat_id: chatId,
           text: messageText,
           parse_mode: "HTML",
           disable_web_page_preview: true,
         }),
       });
 
-      const directData = await directRes.json();
-      if (directData.ok) {
-        return { success: true, message: "Telegram signal dispatched via Direct API!" };
+      const contentType = directRes.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        const directData = await directRes.json();
+        if (directData.ok) {
+          return { success: true, message: "✅ Telegram signal dispatched successfully to channel!" };
+        } else if (directData.description) {
+          return { success: false, message: `Telegram Error: ${directData.description}` };
+        }
       }
-    } catch (e) {
-      // Ignore fallback error
+    } catch (directErr) {
+      console.warn("Direct Telegram API fetch failed:", directErr);
     }
 
     return {
       success: false,
-      message: data.error || "Failed to deliver message to Telegram. Please verify your Bot Token & Chat ID in Bot Settings.",
+      message: "❌ Telegram dispatch failed. Please verify Bot Token & Chat ID.",
     };
   } catch (err: any) {
-    return { success: false, message: err.message || "Network error sending message to Telegram." };
+    console.error("sendTelegramMessage top-level exception:", err);
+    let errMsg = err?.message || "Error sending message to Telegram.";
+    if (errMsg.includes("pattern") || errMsg.includes("SyntaxError") || errMsg.includes("TypeError")) {
+      errMsg = "❌ Dispatch failed. Please re-check Bot Token & Chat ID format.";
+    }
+    return { success: false, message: errMsg };
   }
 }
 

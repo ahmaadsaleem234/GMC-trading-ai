@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Send, CheckCircle2, X, Bell, ShieldCheck, AlertCircle, Copy, ExternalLink, Sparkles, MessageSquare, Zap, Radio } from "lucide-react";
-import { getTelegramConfig, saveTelegramConfig, sendTelegramMessage, TelegramConfig } from "../utils/telegram";
+import { getTelegramConfig, saveTelegramConfig, sendTelegramMessage, cleanTelegramInput, TelegramConfig } from "../utils/telegram";
 
 interface TelegramBotModalProps {
   isOpen: boolean;
@@ -79,13 +79,22 @@ export const TelegramBotModal: React.FC<TelegramBotModalProps> = ({ isOpen, onCl
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    saveTelegramConfig(config);
+    const cleanedConfig = {
+      ...config,
+      botToken: cleanTelegramInput(config.botToken),
+      chatId: cleanTelegramInput(config.chatId),
+    };
+    saveTelegramConfig(cleanedConfig);
+    setConfig(cleanedConfig);
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 3000);
   };
 
   const handleSendTestSignal = async (type: "ENTRY" | "TP_HIT" | "SL_HIT" | "BALANCE" = "ENTRY") => {
-    if (!config.botToken.trim() || !config.chatId.trim()) {
+    const cleanToken = cleanTelegramInput(config.botToken);
+    const cleanChat = cleanTelegramInput(config.chatId);
+
+    if (!cleanToken || !cleanChat) {
       setTestStatus({
         loading: false,
         msg: "Please enter Bot Token and Chat ID first!",
@@ -94,8 +103,15 @@ export const TelegramBotModal: React.FC<TelegramBotModalProps> = ({ isOpen, onCl
       return;
     }
 
+    const currentConfig = {
+      ...config,
+      botToken: cleanToken,
+      chatId: cleanChat,
+    };
+
     setTestStatus({ loading: true, msg: `Sending ${type} demo notification to Telegram...` });
-    saveTelegramConfig(config);
+    saveTelegramConfig(currentConfig);
+    setConfig(currentConfig);
 
     let testMsg = "";
     if (type === "ENTRY") {
@@ -154,7 +170,7 @@ export const TelegramBotModal: React.FC<TelegramBotModalProps> = ({ isOpen, onCl
       `.trim();
     }
 
-    const res = await sendTelegramMessage(testMsg);
+    const res = await sendTelegramMessage(testMsg, undefined, currentConfig);
     setTestStatus({
       loading: false,
       msg: res.message,

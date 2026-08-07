@@ -40,6 +40,7 @@ import {
   getTelegramConfig,
   saveTelegramConfig,
   sendTelegramMessage,
+  cleanTelegramInput,
   TelegramConfig,
 } from "../utils/telegram";
 import {
@@ -449,7 +450,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   // Handle Telegram Config Save
   const handleSaveTelegram = (e: React.FormEvent) => {
     e.preventDefault();
-    saveTelegramConfig(telegramConfig);
+    const cleanedConfig = {
+      ...telegramConfig,
+      botToken: cleanTelegramInput(telegramConfig.botToken),
+      chatId: cleanTelegramInput(telegramConfig.chatId),
+    };
+    saveTelegramConfig(cleanedConfig);
+    setTelegramConfig(cleanedConfig);
     setTelegramSaveSuccess(true);
     addAuditLog({
       username: loggedInUser || "Ahmed (Admin)",
@@ -457,7 +464,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       ip: sessions.find((s) => s.isCurrentSession)?.ip || "197.240.12.88",
       event: "TELEGRAM BOT CONFIGURATION UPDATED",
       status: "SUCCESS",
-      details: `Telegram Bot Token & Chat ID (${telegramConfig.chatId || "N/A"}) modified by Admin. Broadcasts: ${telegramConfig.enabled ? "ENABLED" : "DISABLED"}.`,
+      details: `Telegram Bot Token & Chat ID (${cleanedConfig.chatId || "N/A"}) modified by Admin. Broadcasts: ${cleanedConfig.enabled ? "ENABLED" : "DISABLED"}.`,
       deviceInfo: `${detectDeviceAndBrowserInfo().os} • ${detectDeviceAndBrowserInfo().browser}`,
     });
     setTimeout(() => setTelegramSaveSuccess(false), 3000);
@@ -465,7 +472,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
   // Handle Telegram Test Signal
   const handleSendTestSignal = async (type: "ENTRY" | "TP_HIT" | "SL_HIT" | "BALANCE") => {
-    if (!telegramConfig.botToken.trim() || !telegramConfig.chatId.trim()) {
+    const cleanToken = cleanTelegramInput(telegramConfig.botToken);
+    const cleanChat = cleanTelegramInput(telegramConfig.chatId);
+
+    if (!cleanToken || !cleanChat) {
       setTelegramTestStatus({
         loading: false,
         msg: "Please enter Bot Token and Chat ID first!",
@@ -474,8 +484,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       return;
     }
 
+    const currentConfig = {
+      ...telegramConfig,
+      botToken: cleanToken,
+      chatId: cleanChat,
+    };
+
     setTelegramTestStatus({ loading: true, msg: `Sending ${type} demo signal to Telegram channel...` });
-    saveTelegramConfig(telegramConfig);
+    saveTelegramConfig(currentConfig);
+    setTelegramConfig(currentConfig);
 
     let testMsg = "";
     if (type === "ENTRY") {
@@ -488,7 +505,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       testMsg = `<b>💼 GMC DEMO ACCOUNT BALANCE REPORT</b>\n━━━━━━━━━━━━━━━━━━━\n<b>💰 INITIAL DEPOSIT:</b> <code>$10,000.00</code>\n<b>📈 CURRENT EQUITY:</b> <code>$10,345.20</code>\n<b>🔥 TOTAL PnL:</b> <code>+$345.20 (+3.45%)</code>\n━━━━━━━━━━━━━━━━━━━\n<i>⚡ GMC Capital Risk Control Desk</i>`;
     }
 
-    const res = await sendTelegramMessage(testMsg);
+    const res = await sendTelegramMessage(testMsg, undefined, currentConfig);
     setTelegramTestStatus({
       loading: false,
       msg: res.message,

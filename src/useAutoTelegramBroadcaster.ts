@@ -136,12 +136,12 @@ export function useAutoTelegramBroadcaster() {
       isProcessingRef.current = true;
 
       try {
-        // Sync with 24/7 background server state
-        try {
-          const syncRes = await fetch("/api/telegram/active-signal");
-          if (syncRes.ok) {
-            const syncData = await syncRes.json();
-            if (syncData.ok && syncData.activeTrade) {
+        // Sync with 24/7 background server engine
+        const syncRes = await fetch("/api/telegram/active-signal");
+        if (syncRes.ok && syncRes.headers.get("content-type")?.includes("application/json")) {
+          const syncData = await syncRes.json();
+          if (syncData.ok) {
+            if (syncData.activeTrade) {
               const serverTrade = syncData.activeTrade;
               activeTradeRef.current = {
                 id: serverTrade.id,
@@ -160,69 +160,19 @@ export function useAutoTelegramBroadcaster() {
                 createdAt: serverTrade.createdAt,
               };
               localStorage.setItem(ACTIVE_TRADE_KEY, JSON.stringify(activeTradeRef.current));
-            }
-          }
-        } catch (e) {
-          // Ignore sync network errors
-        }
-
-        const active = activeTradeRef.current;
-
-        if (!active) {
-          const lastClosedStr = localStorage.getItem(LAST_CLOSED_KEY);
-          const lastClosedTime = lastClosedStr ? parseInt(lastClosedStr, 10) : 0;
-          const elapsedSinceClose = Date.now() - lastClosedTime;
-
-          // Search for new setup after cooldown (30 seconds)
-          if (elapsedSinceClose >= 30000) {
-            await generateNewSignal();
-          }
-        } else {
-          // Monitor active trade internally (no duplicate alerts sent while running)
-          const currentPrice = await fetchLivePrice();
-          if (currentPrice !== null) {
-            let isTP = false;
-            let isSL = false;
-
-            if (active.type === "BUY") {
-              if (currentPrice >= active.tp1) isTP = true;
-              else if (currentPrice <= active.sl) isSL = true;
             } else {
-              if (currentPrice <= active.tp1) isTP = true;
-              else if (currentPrice >= active.sl) isSL = true;
-            }
-
-            if (isTP || isSL) {
-              const outcome: "TP_HIT" | "SL_HIT" = isTP ? "TP_HIT" : "SL_HIT";
-              
-              let pnlUSD = active.type === "BUY"
-                ? (currentPrice - active.entry) * 1.0
-                : (active.entry - currentPrice) * 1.0;
-              pnlUSD = Number(pnlUSD.toFixed(2));
-
-              balanceRef.current = Number((balanceRef.current + pnlUSD).toFixed(2));
-              localStorage.setItem(BALANCE_KEY, balanceRef.current.toString());
-
-              // Single outcome alert on completion
-              await dispatchSLTPResultToTelegram({
-                source: "🥇 TOP 1 – GMC GOLD Apex Bank-Zone Matrix",
-                asset: active.asset,
-                type: active.type,
-                outcome,
-                pnlUSD,
-                price: Number(currentPrice.toFixed(2)),
-                accountBalance: balanceRef.current,
-              });
-
-              // UNLOCK: Mark completed and allow next setup after cooldown
               activeTradeRef.current = null;
               localStorage.removeItem(ACTIVE_TRADE_KEY);
-              localStorage.setItem(LAST_CLOSED_KEY, Date.now().toString());
+            }
+
+            if (syncData.accountBalance) {
+              balanceRef.current = syncData.accountBalance;
+              localStorage.setItem(BALANCE_KEY, syncData.accountBalance.toString());
             }
           }
         }
       } catch (err) {
-        console.error("[GMC AI Brain] Broadcaster loop error:", err);
+        console.error("[GMC AI Brain] Broadcaster sync error:", err);
       } finally {
         isProcessingRef.current = false;
       }

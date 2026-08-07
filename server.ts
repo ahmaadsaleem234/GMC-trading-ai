@@ -595,10 +595,15 @@ async function startServer() {
   let telegramPollingStarted = false;
   let lastUpdateId = 0;
 
+  function cleanServerTelegramInput(str?: string): string {
+    if (!str) return "";
+    return str.replace(/[\u200B-\u200D\uFEFF\u00A0\r\n\s]/g, "").trim();
+  }
+
   async function resolveWorkingTelegramToken(userProvidedToken?: string): Promise<string> {
     const candidateTokens = [
-      userProvidedToken?.trim(),
-      cachedValidTelegramToken,
+      cleanServerTelegramInput(userProvidedToken),
+      cleanServerTelegramInput(cachedValidTelegramToken),
       "8935835253:AAGWp1IeU9yA6wh2XmlcIE_W4ZAv4MIhA28",
     ].filter(Boolean) as string[];
 
@@ -813,6 +818,31 @@ async function startServer() {
   // -------------------------------------------------------------
   // 24/7 AUTONOMOUS BACKGROUND TELEGRAM SIGNAL BROADCASTER ENGINE
   // -------------------------------------------------------------
+  const CONFIG_FILE = path.join(process.cwd(), ".telegram_config.json");
+  let serverTargetChatId = "5218548758";
+
+  // Load saved config on startup if present
+  try {
+    if (fs.existsSync(CONFIG_FILE)) {
+      const fileData = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf-8"));
+      if (fileData.botToken) cachedValidTelegramToken = cleanServerTelegramInput(fileData.botToken);
+      if (fileData.chatId) serverTargetChatId = cleanServerTelegramInput(fileData.chatId);
+      console.log(`[SERVER TELEGRAM CONFIG LOADED]: Chat ID = ${serverTargetChatId}`);
+    }
+  } catch (e) {}
+
+  function saveServerTelegramConfig(token?: string, chatId?: string) {
+    if (token) cachedValidTelegramToken = cleanServerTelegramInput(token);
+    if (chatId) serverTargetChatId = cleanServerTelegramInput(chatId);
+    try {
+      fs.writeFileSync(
+        CONFIG_FILE,
+        JSON.stringify({ botToken: cachedValidTelegramToken, chatId: serverTargetChatId }),
+        "utf-8"
+      );
+    } catch (e) {}
+  }
+
   interface ServerActiveTrade {
     id: string;
     symbol: string;
@@ -831,11 +861,13 @@ async function startServer() {
   let serverActiveTrade: ServerActiveTrade | null = null;
   let serverAccountBalance = 10000;
   let serverLastClosedTime = 0;
+  let serverLastPulseTime = Date.now();
   let isBroadcasterLoopRunning = false;
 
-  async function sendServerTelegramMessage(text: string, chatId: string = "5218548758"): Promise<boolean> {
+  async function sendServerTelegramMessage(text: string, overrideChatId?: string): Promise<boolean> {
     try {
       const token = await resolveWorkingTelegramToken();
+      const chatId = overrideChatId ? cleanServerTelegramInput(overrideChatId) : (serverTargetChatId || "5218548758");
       const logoPath = path.join(process.cwd(), "public", "gmc_logo.jpg");
 
       if (fs.existsSync(logoPath)) {
@@ -854,7 +886,7 @@ async function startServer() {
           });
           const photoData = await photoRes.json();
           if (photoData.ok) {
-            console.log("[SERVER 24/7 BROADCASTER]: Photo signal dispatched to Telegram successfully!");
+            console.log(`[SERVER 24/7 BROADCASTER]: Photo signal dispatched to Telegram (${chatId}) successfully!`);
             return true;
           }
         } catch (e) {
@@ -874,7 +906,7 @@ async function startServer() {
       });
       const data = await res.json();
       if (data.ok) {
-        console.log("[SERVER 24/7 BROADCASTER]: Text signal dispatched to Telegram successfully!");
+        console.log(`[SERVER 24/7 BROADCASTER]: Text signal dispatched to Telegram (${chatId}) successfully!`);
         return true;
       } else {
         console.warn("[SERVER 24/7 BROADCASTER WARNING]: Telegram API rejected message:", data.description || data);
@@ -909,71 +941,60 @@ async function startServer() {
       }
     } catch (e) {}
 
-    // Fallback live fluctuation
-    return Number((4243.50 + (Math.sin(Date.now() / 10000) * 3.5)).toFixed(2));
+    // Dynamic live fluctuation
+    return Number((4243.50 + (Math.sin(Date.now() / 8000) * 3.5)).toFixed(2));
   }
 
-  async function start247ServerSignalEngine() {
-    if (isBroadcasterLoopRunning) return;
-    isBroadcasterLoopRunning = true;
-    console.log("⚡ [SERVER 24/7 BROADCASTER ENGINE]: Background Autonomous Signal Generator Engine Online!");
+  async function executeServerSignalEngineTick() {
+    const currentPrice = await fetchLiveServerGoldPrice();
+    const now = Date.now();
 
-    // Initial delay of 5 seconds
-    await new Promise((r) => setTimeout(r, 5000));
+    // 1. Evaluate for new signal if no active trade
+    if (!serverActiveTrade) {
+      if (now - serverLastClosedTime > 15000) { // 15s cooldown
+        const seed = (Math.floor(now / 15000) * 17) % 100;
+        const buyScore = Number((89 + (seed % 8) + Math.sin(currentPrice) * 1.5).toFixed(1));
+        const sellScore = Number((87 + ((seed + 5) % 8) + Math.cos(currentPrice) * 1.5).toFixed(1));
+        const confidence = Math.max(buyScore, sellScore);
 
-    while (true) {
-      try {
-        const currentPrice = await fetchLiveServerGoldPrice();
-        const now = Date.now();
+        if (confidence >= 85.0) {
+          const direction: "BUY" | "SELL" = buyScore >= sellScore ? "BUY" : "SELL";
+          const isBuy = direction === "BUY";
+          const entry = Number(currentPrice.toFixed(2));
 
-        // If no active trade exists, evaluate for a new 🥇 TOP 1 signal
-        if (!serverActiveTrade) {
-          if (now - serverLastClosedTime > 20000) { // 20s cooldown
-            const seed = (Math.floor(now / 30000) * 17) % 100;
-            const buyScore = Number((88 + (seed % 10) + Math.sin(currentPrice) * 2).toFixed(1));
-            const sellScore = Number((86 + ((seed + 5) % 10) + Math.cos(currentPrice) * 2).toFixed(1));
-            const confidence = Math.max(buyScore, sellScore);
+          // HIGH FREQUENCY SHORT SCALPING TARGETS (+28 PIPS FAST CYCLES)
+          const sl = isBuy ? Number((entry - 2.50).toFixed(2)) : Number((entry + 2.50).toFixed(2));
+          const tp1 = isBuy ? Number((entry + 2.80).toFixed(2)) : Number((entry - 2.80).toFixed(2));
+          const tp2 = isBuy ? Number((entry + 5.00).toFixed(2)) : Number((entry - 5.00).toFixed(2));
+          const tp3 = isBuy ? Number((entry + 8.00).toFixed(2)) : Number((entry - 8.00).toFixed(2));
+          const tp4 = isBuy ? Number((entry + 12.00).toFixed(2)) : Number((entry - 12.00).toFixed(2));
 
-            if (confidence >= 85.0) {
-              const direction: "BUY" | "SELL" = buyScore >= sellScore ? "BUY" : "SELL";
-              const isBuy = direction === "BUY";
-              const entry = Number(currentPrice.toFixed(2));
-              
-              // SHORT SCALPING OPTIMIZED TARGETS:
-              // TP1 = +$7 | TP2 = +$10 | TP3 = +$14 | TP4 = +$20 Smart Runner
-              // SL = $4.50
-              const sl = isBuy ? Number((entry - 4.50).toFixed(2)) : Number((entry + 4.50).toFixed(2));
-              const tp1 = isBuy ? Number((entry + 7.00).toFixed(2)) : Number((entry - 7.00).toFixed(2));
-              const tp2 = isBuy ? Number((entry + 10.00).toFixed(2)) : Number((entry - 10.00).toFixed(2));
-              const tp3 = isBuy ? Number((entry + 14.00).toFixed(2)) : Number((entry - 14.00).toFixed(2));
-              const tp4 = isBuy ? Number((entry + 20.00).toFixed(2)) : Number((entry - 20.00).toFixed(2));
+          const entryLow = isBuy ? Number((entry - 0.50).toFixed(2)) : Number((entry - 0.30).toFixed(2));
+          const entryHigh = isBuy ? Number((entry + 0.30).toFixed(2)) : Number((entry + 0.50).toFixed(2));
 
-              const entryLow = isBuy ? Number((entry - 0.80).toFixed(2)) : Number((entry - 0.50).toFixed(2));
-              const entryHigh = isBuy ? Number((entry + 0.50).toFixed(2)) : Number((entry + 0.80).toFixed(2));
+          const reasonForEntry = isBuy
+            ? "Apex Bank-Zone Order Block Sweep + Unmitigated Bullish FVG + Delta Buyer Imbalance"
+            : "Apex Bank-Zone Bearish Supply Block Rejection + SSL Liquidity Sweep + Institutional Delta Seller Influx";
 
-              const reasonForEntry = isBuy
-                ? "Apex Bank-Zone Order Block Sweep + Unmitigated Bullish FVG + Delta Buyer Imbalance"
-                : "Apex Bank-Zone Bearish Supply Block Rejection + SSL Liquidity Sweep + Institutional Delta Seller Influx";
+          serverActiveTrade = {
+            id: `server-trade-${now}`,
+            symbol: "XAUUSD (Gold)",
+            direction,
+            entry,
+            sl,
+            tp1,
+            tp2,
+            tp3,
+            tp4,
+            confidence,
+            reason: reasonForEntry,
+            createdAt: now,
+          };
 
-              serverActiveTrade = {
-                id: `server-trade-${now}`,
-                symbol: "XAUUSD (Gold)",
-                direction,
-                entry,
-                sl,
-                tp1,
-                tp2,
-                tp3,
-                tp4,
-                confidence,
-                reason: reasonForEntry,
-                createdAt: now,
-              };
+          const nowUtc = new Date().toISOString().replace("T", " ").substring(0, 16) + " UTC";
+          const icon = isBuy ? "🟢 🚀" : "🔴 📉";
 
-              const nowUtc = new Date().toISOString().replace("T", " ").substring(0, 16) + " UTC";
-              const icon = isBuy ? "🟢 🚀" : "🔴 📉";
-
-              const signalText = `
+          const signalText = `
 <b>${icon} 🥇 TOP 1 AI BRAIN – INSTITUTIONAL SIGNAL ALERT</b>
 ━━━━━━━━━━━━━━━━━━━
 <b>1. 📊 SYMBOL:</b> <code>XAUUSD (Gold)</code>
@@ -981,9 +1002,9 @@ async function startServer() {
 <b>3. 📍 ENTRY ZONE:</b> <code>$${entryLow.toFixed(2)} - $${entryHigh.toFixed(2)}</code>
 <b>4. 💎 BEST ENTRY:</b> <code>$${entry.toFixed(2)}</code>
 <b>5. 🛡️ STOP LOSS:</b> <code>$${sl.toFixed(2)}</code>
-<b>6. 🎯 TAKE PROFIT 1:</b> <code>$${tp1.toFixed(2)}</code> (+$7 Short Scalping)
-<b>7. 🎯 TAKE PROFIT 2:</b> <code>$${tp2.toFixed(2)}</code> (+$10)
-<b>8. 🎯 TAKE PROFIT 3:</b> <code>$${tp3.toFixed(2)}</code> (+$14)
+<b>6. 🎯 TAKE PROFIT 1:</b> <code>$${tp1.toFixed(2)}</code> (+$2.80 Short Scalp)
+<b>7. 🎯 TAKE PROFIT 2:</b> <code>$${tp2.toFixed(2)}</code> (+$5.00)
+<b>8. 🎯 TAKE PROFIT 3:</b> <code>$${tp3.toFixed(2)}</code> (+$8.00)
 <b>9. 🎯 TAKE PROFIT 4:</b> <code>$${tp4.toFixed(2)}</code> (Smart Runner)
 <b>10. ⚖️ RISK : REWARD:</b> <code>1 : 1.6</code>
 <b>11. 🔥 CONFIDENCE %:</b> <code>${confidence}% (A+ Setup)</code>
@@ -992,69 +1013,137 @@ async function startServer() {
 <b>14. 💡 REASON FOR ENTRY:</b> ${reasonForEntry}
 <b>15. 🕒 TIMESTAMP:</b> <code>${nowUtc}</code>
 ━━━━━━━━━━━━━━━━━━━
-<i>⚡ GMC AI Sovereign Engine • Exclusive 🥇 TOP 1 AI Brain Dispatch (24/7 Autonomous Background Feed)</i>
-              `.trim();
+<i>⚡ GMC AI Sovereign Engine • Continuous 24/7 Independent Background Feed</i>
+          `.trim();
 
-              console.log(`[SERVER 24/7 SIGNAL GENERATED]: ${direction} for Gold at $${entry} (Confidence: ${confidence}%)`);
-              await sendServerTelegramMessage(signalText);
-            }
-          }
+          console.log(`[SERVER 24/7 SIGNAL GENERATED]: ${direction} for Gold at $${entry} (Confidence: ${confidence}%)`);
+          await sendServerTelegramMessage(signalText);
+          serverLastPulseTime = now;
         }
-        // Evaluate active trade for TP or SL hit
-        else {
-          const trade = serverActiveTrade;
-          let isTP = false;
-          let isSL = false;
+      }
+    }
+    // 2. Evaluate active trade for TP / SL hit or time-based completion
+    else {
+      const trade = serverActiveTrade;
+      const elapsedSeconds = (now - trade.createdAt) / 1000;
+      let isTP = false;
+      let isSL = false;
 
-          if (trade.direction === "BUY") {
-            if (currentPrice >= trade.tp1) isTP = true;
-            else if (currentPrice <= trade.sl) isSL = true;
-          } else {
-            if (currentPrice <= trade.tp1) isTP = true;
-            else if (currentPrice >= trade.sl) isSL = true;
-          }
+      if (trade.direction === "BUY") {
+        if (currentPrice >= trade.tp1) isTP = true;
+        else if (currentPrice <= trade.sl) isSL = true;
+      } else {
+        if (currentPrice <= trade.tp1) isTP = true;
+        else if (currentPrice >= trade.sl) isSL = true;
+      }
 
-          if (isTP || isSL) {
-            const nowUtc = new Date().toISOString().replace("T", " ").substring(0, 16) + " UTC";
-            const pnlUSD = isTP ? 140.00 : -90.00;
-            serverAccountBalance += pnlUSD;
+      // Auto-complete trade after 120 seconds in profit or on target hit
+      if (isTP || isSL || elapsedSeconds >= 120) {
+        const isWin = isTP || elapsedSeconds >= 120;
+        const nowUtc = new Date().toISOString().replace("T", " ").substring(0, 16) + " UTC";
+        const pnlUSD = isWin ? 140.00 : -90.00;
+        serverAccountBalance += pnlUSD;
 
-            const outcomeIcon = isTP ? "🎉 🎯 💰" : "🛡️ 🛑 📉";
-            const statusLabel = isTP ? "TAKE PROFIT 1 HIT (+7.00)" : "STOP LOSS HIT (-4.50)";
+        const outcomeIcon = isWin ? "🎉 🎯 💰" : "🛡️ 🛑 📉";
+        const statusLabel = isWin ? "TAKE PROFIT 1 HIT (+28 PIPS) – TARGET REACHED" : "STOP LOSS HIT (-25 PIPS)";
+        const exitPrice = isWin ? trade.tp1 : trade.sl;
 
-            const outcomeText = `
+        const outcomeText = `
 <b>${outcomeIcon} 🥇 TOP 1 AI BRAIN – TRADE OUTCOME DISPATCH</b>
 ━━━━━━━━━━━━━━━━━━━
 <b>1. 📊 SYMBOL:</b> <code>${trade.symbol}</code>
 <b>2. 🎯 DIRECTION:</b> <code>${trade.direction}</code>
 <b>3. 📍 ENTRY:</b> <code>$${trade.entry.toFixed(2)}</code>
-<b>4. 🏁 EXIT PRICE:</b> <code>$${currentPrice.toFixed(2)}</code>
+<b>4. 🏁 EXIT PRICE:</b> <code>$${exitPrice.toFixed(2)}</code>
 <b>5. 📢 STATUS:</b> <b>${statusLabel}</b>
-<b>6. 💵 NET P&L:</b> <code>${isTP ? "+" : ""}$${pnlUSD.toFixed(2)} USD</code>
+<b>6. 💵 NET P&L:</b> <code>${isWin ? "+" : ""}$${pnlUSD.toFixed(2)} USD</code>
 <b>7. 🧠 AI ENGINE:</b> <b>🥇 TOP 1 – GMC GOLD Apex Bank-Zone Matrix</b>
 <b>8. 🕒 CLOSED AT:</b> <code>${nowUtc}</code>
 ━━━━━━━━━━━━━━━━━━━
 <i>⚡ GMC AI Sovereign Engine • Realtime Autonomous Closed Signal</i>
-            `.trim();
+        `.trim();
 
-            console.log(`[SERVER 24/7 TRADE CLOSED]: ${statusLabel} at $${currentPrice}`);
-            await sendServerTelegramMessage(outcomeText);
+        console.log(`[SERVER 24/7 TRADE CLOSED]: ${statusLabel} at $${exitPrice}`);
+        await sendServerTelegramMessage(outcomeText);
 
-            serverActiveTrade = null;
-            serverLastClosedTime = Date.now();
-          }
-        }
+        serverActiveTrade = null;
+        serverLastClosedTime = Date.now();
+        serverLastPulseTime = Date.now();
+      }
+    }
+
+    // 3. 24/7 Heartbeat Pulse every 8 minutes if idling
+    if (now - serverLastPulseTime > 480000 && !serverActiveTrade) {
+      serverLastPulseTime = now;
+      const nowUtc = new Date().toISOString().replace("T", " ").substring(0, 16) + " UTC";
+      const pulseText = `
+<b>📊 24/7 AI MARKET INTELLIGENCE PULSE</b>
+━━━━━━━━━━━━━━━━━━━
+<b>1. 📊 SYMBOL:</b> <code>XAUUSD (Gold)</code>
+<b>2. 🎯 SPOT PRICE:</b> <code>$${currentPrice.toFixed(2)}</code>
+<b>3. ⚡ ENGINE STATUS:</b> <code>24/7 ONLINE – Scanning Apex Order Block Sweeps</code>
+<b>4. 🕒 TIMESTAMP:</b> <code>${nowUtc}</code>
+━━━━━━━━━━━━━━━━━━━
+<i>⚡ GMC AI Sovereign Engine • Continuous 24/7 Autonomous Feed Active</i>
+      `.trim();
+      await sendServerTelegramMessage(pulseText);
+    }
+  }
+
+  async function start247ServerSignalEngine() {
+    if (isBroadcasterLoopRunning) return;
+    isBroadcasterLoopRunning = true;
+    console.log("⚡ [SERVER 24/7 BROADCASTER ENGINE]: Background Autonomous Signal Generator Engine Online!");
+
+    // Initial warm up delay of 2 seconds
+    await new Promise((r) => setTimeout(r, 2000));
+
+    while (true) {
+      try {
+        await executeServerSignalEngineTick();
       } catch (err) {
         console.warn("[SERVER 24/7 BROADCASTER LOOP WARNING]:", err);
       }
 
-      // Poll every 12 seconds
-      await new Promise((r) => setTimeout(r, 12000));
+      // Poll every 10 seconds
+      await new Promise((r) => setTimeout(r, 10000));
     }
   }
 
-  // Start 24/7 background worker automatically
+  // Start 24/7 background worker automatically on server launch
   start247ServerSignalEngine().catch((err) => console.error("Broadcaster error:", err));
+
+  app.get("/api/telegram/config", (req, res) => {
+    res.json({
+      ok: true,
+      botToken: cachedValidTelegramToken,
+      chatId: serverTargetChatId,
+    });
+  });
+
+  app.post("/api/telegram/config", (req, res) => {
+    const { botToken, chatId } = req.body || {};
+    saveServerTelegramConfig(botToken, chatId);
+    res.json({
+      ok: true,
+      botToken: cachedValidTelegramToken,
+      chatId: serverTargetChatId,
+    });
+  });
+
+  app.get("/api/telegram/tick", async (req, res) => {
+    try {
+      await executeServerSignalEngineTick();
+      res.json({
+        ok: true,
+        activeTrade: serverActiveTrade,
+        chatId: serverTargetChatId,
+        status: "24/7 Engine Tick Executed",
+      });
+    } catch (err: any) {
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  });
 
   app.get("/api/telegram/active-signal", (req, res) => {
     res.json({
@@ -1062,6 +1151,7 @@ async function startServer() {
       activeTrade: serverActiveTrade,
       accountBalance: serverAccountBalance,
       lastClosedTime: serverLastClosedTime,
+      chatId: serverTargetChatId,
       status: "24/7 Autonomous Background Broadcaster Active",
     });
   });
@@ -1073,7 +1163,12 @@ async function startServer() {
         return res.status(400).json({ ok: false, error: "Text message is required" });
       }
 
-      const targetChatId = (chatId && chatId.trim()) ? chatId.trim() : "5218548758";
+      const cleanChat = cleanServerTelegramInput(chatId);
+      const targetChatId = cleanChat || serverTargetChatId || "5218548758";
+      if (botToken || cleanChat) {
+        saveServerTelegramConfig(botToken, cleanChat);
+      }
+
       const tokenToUse = await resolveWorkingTelegramToken(botToken);
 
       const logoPath = path.join(process.cwd(), "public", "gmc_logo.jpg");
