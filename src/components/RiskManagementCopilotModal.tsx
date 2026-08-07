@@ -28,7 +28,7 @@ export const RiskManagementCopilotModal: React.FC<RiskManagementCopilotModalProp
   onClose,
   initialAssetKey = "XAUUSD",
   initialType = "BUY",
-  currentPrice = 4238.5,
+  currentPrice = 4348.50,
   onExecuteTrade,
 }) => {
   const [assetKey, setAssetKey] = useState<string>(initialAssetKey);

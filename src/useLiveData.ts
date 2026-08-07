@@ -5,7 +5,7 @@ import { fetchLiveGoldPrice, subscribeGoldPriceUpdates } from "./services/goldAp
 export const SUPPORTED_ASSETS: Asset[] = [
   { key: "US30", label: "US30 Dow Jones Index", short: "US30", basePrice: 54025.0, seed: 99, decimals: 1, color: "#38bdf8", category: "forex" },
   { key: "NAS100", label: "NASDAQ 100 Index", short: "NAS100", basePrice: 29413.0, seed: 100, decimals: 1, color: "#00e08a", category: "forex" },
-  { key: "XAUUSD", label: "Gold / USD Spot", short: "XAUUSD", basePrice: 4238.50, seed: 101, decimals: 2, color: "#f6b000", category: "metal" },
+  { key: "XAUUSD", label: "Gold / USD Spot", short: "XAUUSD", basePrice: 4348.50, seed: 101, decimals: 2, color: "#f6b000", category: "metal" },
   { key: "XAGUSD", label: "Silver / USD Spot", short: "XAGUSD", basePrice: 61.95, seed: 115, decimals: 2, color: "#cbd5e1", category: "metal" },
   { key: "BTCUSDT", label: "Bitcoin / USDT", short: "BTCUSDT", basePrice: 64740.0, seed: 102, decimals: 2, color: "#f97316", category: "crypto" },
   { key: "ETHUSDT", label: "Ethereum / USDT", short: "ETHUSDT", basePrice: 1915.0, seed: 103, decimals: 2, color: "#6366f1", category: "crypto" },
@@ -214,11 +214,10 @@ export function useLiveData(activeAssetKey: string) {
           }
         }
 
-        // 2. Fetch Yahoo Finance live market prices for US30, NAS100, XAUUSD, XAGUSD, EURUSD, GBPUSD, USDJPY
+        // 2. Fetch Yahoo Finance live market prices for US30, NAS100, XAGUSD, EURUSD, GBPUSD, USDJPY
         const yahooMap: Record<string, string> = {
           US30: "%5EDJI",
           NAS100: "%5ENDX",
-          XAUUSD: "GC=F",
           XAGUSD: "SI=F",
           EURUSD: "EURUSD=X",
           GBPUSD: "GBPUSD=X",
@@ -323,7 +322,7 @@ export function useLiveData(activeAssetKey: string) {
     return () => clearInterval(interval);
   }, []);
 
-  const currentPrice = prices[activeAssetKey]?.price || SUPPORTED_ASSETS.find((a) => a.key === activeAssetKey)?.basePrice || 4238.5;
+  const currentPrice = prices[activeAssetKey]?.price || SUPPORTED_ASSETS.find((a) => a.key === activeAssetKey)?.basePrice || 4348.50;
 
   const liveIndicators = useMemo(() => {
     const vol24h = prices[activeAssetKey]?.volume24h || 12450000;

@@ -374,10 +374,10 @@ export const UniversalInstitutionalTabHeader: React.FC<
 
   // Real-time Gold Object & Prices
   const xauObj = prices["XAUUSD"] || {
-    price: currentPrice || 4238.5,
+    price: currentPrice || 4348.50,
     changePct: 0.45,
   };
-  const goldPrice = xauObj.price || currentPrice || 4238.5;
+  const goldPrice = xauObj.price || currentPrice || 4348.50;
   const changePct = xauObj.changePct || 0.45;
   const isPositive = changePct >= 0;
 

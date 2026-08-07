@@ -64,8 +64,8 @@ export const MasterAIBrainSynthesizer: React.FC<MasterAIBrainSynthesizerProps> =
   const [showAlertPopup, setShowAlertPopup] = useState<boolean>(true);
   const [refreshCycle, setRefreshCycle] = useState<number>(0);
 
-  const livePriceObj = prices[activeAssetKey] || { price: currentPrice || 4238.5, changePct: 0.42 };
-  const basePrice = livePriceObj.price || 4238.5;
+  const livePriceObj = prices[activeAssetKey] || { price: currentPrice || 4348.50, changePct: 0.42 };
+  const basePrice = livePriceObj.price || 4348.50;
   const decimals = activeAssetKey.includes("EUR") || activeAssetKey.includes("GBP") ? 4 : 2;
 
   // Ultimate Self-Optimizing Institutional Master AI Brain Core calculations

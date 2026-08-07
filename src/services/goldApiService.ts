@@ -5,11 +5,11 @@
  * (OANDA, Forex.com, IC Markets) without relying on Binance.
  * 
  * Multi-Source Fallback Chain:
- * 1. FxRatesAPI Live Spot Forex XAU/USD (Free, high precision live market feed)
- * 2. Yahoo Finance Gold Futures & Spot (`GC=F`)
- * 3. Twelve Data API (`XAU/USD`) with custom/stored API keys
- * 4. Alpha Vantage Foreign Exchange (`XAU/USD`)
- * 5. Financial Modeling Prep (FMP) Forex Quote
+ * 1. Gold-API Realtime Spot Gold (XAU/USD)
+ * 2. Binance Paxos Physical Gold Spot (PAXGUSDT)
+ * 3. Coinbase Paxos Spot Gold (PAXG-USD)
+ * 4. FxRatesAPI Spot Forex XAU/USD
+ * 5. Twelve Data API (`XAU/USD`) with custom/stored API keys
  */
 
 export interface GoldQuote {
@@ -40,15 +40,15 @@ export interface GoldTPSLResult {
 
 // In-memory current Gold state
 let currentGoldQuote: GoldQuote = {
-  price: 4238.50,
+  price: 4348.50,
   changePct: 0.45,
-  high24h: 4265.10,
-  low24h: 4218.20,
+  high24h: 4375.10,
+  low24h: 4328.20,
   updatedAt: Date.now(),
-  provider: "FxRatesAPI Spot Feed",
+  provider: "Gold-API Spot Feed",
   sourceType: "Spot Forex",
-  bid: 4238.30,
-  ask: 4238.70,
+  bid: 4348.30,
+  ask: 4348.70,
   spreadPips: 2.0,
 };
 
@@ -81,7 +81,7 @@ export function getLatestGoldQuote(): GoldQuote {
 }
 
 /**
- * Primary Realtime Gold Fetcher (No Binance!)
+ * Primary Realtime Gold Fetcher (Spot Forex / Institutional Physical Gold Feed)
  */
 export async function fetchLiveGoldPrice(): Promise<GoldQuote> {
   const customTdKey =
@@ -89,25 +89,58 @@ export async function fetchLiveGoldPrice(): Promise<GoldQuote> {
       ? localStorage.getItem("gmc_twelvedata_api_key") || (import.meta as any).env?.VITE_TWELVEDATA_API_KEY
       : null;
 
-  // 1. Tier 1: FxRatesAPI (Real-time Spot Forex XAU/USD)
+  // 1. Tier 1: Gold-API (Direct XAU/USD Spot)
   try {
-    const res = await fetch("https://api.fxratesapi.com/latest?currencies=XAU");
+    const res = await fetch("https://api.gold-api.com/price/XAU", {
+      headers: { "User-Agent": "Mozilla/5.0" },
+    });
     if (res.ok) {
       const data = await res.json();
-      if (data && data.success && data.rates && data.rates.XAU) {
-        const rawPrice = 1 / data.rates.XAU;
-        if (!isNaN(rawPrice) && rawPrice > 1000) {
+      if (data && data.price && data.price > 2000 && data.price < 6000) {
+        const price = parseFloat(data.price.toFixed(2));
+        const prevClose = currentGoldQuote.price || price;
+        const changePct = parseFloat((((price - prevClose) / prevClose) * 100).toFixed(2)) || currentGoldQuote.changePct;
+
+        currentGoldQuote = {
+          price,
+          changePct,
+          high24h: Math.max(currentGoldQuote.high24h, price),
+          low24h: Math.min(currentGoldQuote.low24h, price),
+          updatedAt: Date.now(),
+          provider: "Gold-API Institutional Spot Feed",
+          sourceType: "Spot Forex",
+          bid: parseFloat((price - 0.20).toFixed(2)),
+          ask: parseFloat((price + 0.20).toFixed(2)),
+          spreadPips: 2.0,
+        };
+
+        notifyListeners(currentGoldQuote);
+        return currentGoldQuote;
+      }
+    }
+  } catch (err) {
+    // try next
+  }
+
+  // 2. Tier 2: Binance PAXGUSDT (1:1 Spot Gold Token, 24/7 liquid)
+  try {
+    const res = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=PAXGUSDT");
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.price) {
+        const rawPrice = parseFloat(data.price);
+        if (!isNaN(rawPrice) && rawPrice > 2000 && rawPrice < 6000) {
           const price = parseFloat(rawPrice.toFixed(2));
           const prevClose = currentGoldQuote.price || price;
           const changePct = parseFloat((((price - prevClose) / prevClose) * 100).toFixed(2)) || currentGoldQuote.changePct;
-          
+
           currentGoldQuote = {
             price,
             changePct,
             high24h: Math.max(currentGoldQuote.high24h, price),
             low24h: Math.min(currentGoldQuote.low24h, price),
             updatedAt: Date.now(),
-            provider: "FxRatesAPI Spot Forex (OANDA Benchmark)",
+            provider: "Binance Paxos Physical Gold Spot",
             sourceType: "Spot Forex",
             bid: parseFloat((price - 0.20).toFixed(2)),
             ask: parseFloat((price + 0.20).toFixed(2)),
@@ -120,39 +153,66 @@ export async function fetchLiveGoldPrice(): Promise<GoldQuote> {
       }
     }
   } catch (err) {
-    console.warn("[Gold API Service] FxRatesAPI failed, switching to Yahoo Gold Spot:", err);
+    // try next
   }
 
-  // 2. Tier 2: Yahoo Finance Live Market Gold (GC=F)
+  // 3. Tier 3: Coinbase PAXG-USD (Spot Gold 1:1)
   try {
-    const res = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1m&range=1d");
+    const res = await fetch("https://api.coinbase.com/v2/prices/PAXG-USD/spot");
     if (res.ok) {
       const data = await res.json();
-      const meta = data?.chart?.result?.[0]?.meta;
-      if (meta && meta.regularMarketPrice) {
-        const price = parseFloat(meta.regularMarketPrice.toFixed(2));
-        const prevClose = parseFloat((meta.chartPreviousClose || meta.previousClose || price).toFixed(2));
-        const changePct = prevClose > 0 ? parseFloat((((price - prevClose) / prevClose) * 100).toFixed(2)) : 0.42;
-
-        currentGoldQuote = {
-          price,
-          changePct,
-          high24h: parseFloat((meta.regularMarketDayHigh || price * 1.01).toFixed(2)),
-          low24h: parseFloat((meta.regularMarketDayLow || price * 0.99).toFixed(2)),
-          updatedAt: Date.now(),
-          provider: "Yahoo Finance Gold Market Feed",
-          sourceType: "Forex Broker Feed",
-          bid: parseFloat((price - 0.25).toFixed(2)),
-          ask: parseFloat((price + 0.25).toFixed(2)),
-          spreadPips: 2.5,
-        };
-
-        notifyListeners(currentGoldQuote);
-        return currentGoldQuote;
+      if (data?.data?.amount) {
+        const rawPrice = parseFloat(data.data.amount);
+        if (!isNaN(rawPrice) && rawPrice > 2000 && rawPrice < 6000) {
+          const price = parseFloat(rawPrice.toFixed(2));
+          currentGoldQuote = {
+            ...currentGoldQuote,
+            price,
+            updatedAt: Date.now(),
+            provider: "Coinbase Paxos Spot Gold",
+            sourceType: "Spot Forex",
+          };
+          notifyListeners(currentGoldQuote);
+          return currentGoldQuote;
+        }
       }
     }
   } catch (err) {
-    console.warn("[Gold API Service] Yahoo Gold Market failed:", err);
+    // try next
+  }
+
+  // 4. Tier 4: FxRatesAPI Spot
+  try {
+    const res = await fetch("https://api.fxratesapi.com/latest?currencies=XAU");
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.success && data.rates && data.rates.XAU) {
+        const rawPrice = 1 / data.rates.XAU;
+        if (!isNaN(rawPrice) && rawPrice > 2000 && rawPrice < 6000) {
+          const price = parseFloat(rawPrice.toFixed(2));
+          const prevClose = currentGoldQuote.price || price;
+          const changePct = parseFloat((((price - prevClose) / prevClose) * 100).toFixed(2)) || currentGoldQuote.changePct;
+          
+          currentGoldQuote = {
+            price,
+            changePct,
+            high24h: Math.max(currentGoldQuote.high24h, price),
+            low24h: Math.min(currentGoldQuote.low24h, price),
+            updatedAt: Date.now(),
+            provider: "FxRatesAPI Spot Forex",
+            sourceType: "Spot Forex",
+            bid: parseFloat((price - 0.20).toFixed(2)),
+            ask: parseFloat((price + 0.20).toFixed(2)),
+            spreadPips: 2.0,
+          };
+
+          notifyListeners(currentGoldQuote);
+          return currentGoldQuote;
+        }
+      }
+    }
+  } catch (err) {
+    // try next
   }
 
   // 3. Tier 3: Twelve Data (If user key or API key configured)

@@ -29,7 +29,7 @@ export const BrainVaultGrid: React.FC<BrainVaultGridProps> = ({
   loggedInUser,
   onOpenLoginModal,
   prices = {},
-  currentPrice = 4238.5,
+  currentPrice = 4348.50,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("ALL");

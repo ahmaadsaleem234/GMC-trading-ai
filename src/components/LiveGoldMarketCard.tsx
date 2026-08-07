@@ -12,14 +12,14 @@ export const LiveGoldMarketCard: React.FC<LiveGoldMarketCardProps> = ({
   currentPrice,
 }) => {
   const xauObj = prices["XAUUSD"] || {
-    price: currentPrice || 4238.5,
+    price: currentPrice || 4348.50,
     changePct: 0.45,
-    high24h: (currentPrice || 4238.5) * 1.012,
-    low24h: (currentPrice || 4238.5) * 0.988,
+    high24h: (currentPrice || 4348.50) * 1.012,
+    low24h: (currentPrice || 4348.50) * 0.988,
     volume24h: 185400,
   };
 
-  const goldPrice = xauObj.price || currentPrice || 4238.5;
+  const goldPrice = xauObj.price || currentPrice || 4348.50;
   const changePct = xauObj.changePct || 0.45;
   const isPositive = changePct >= 0;
 

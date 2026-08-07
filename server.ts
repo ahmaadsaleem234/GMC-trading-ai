@@ -918,31 +918,84 @@ async function startServer() {
     }
   }
 
+  let lastKnownServerGoldPrice = 4348.50;
+
   async function fetchLiveServerGoldPrice(): Promise<number> {
-    // 1. Try FxRatesAPI
+    // 1. Try Gold-API (Direct XAU Spot)
+    try {
+      const res = await fetch("https://api.gold-api.com/price/XAU", {
+        headers: { "User-Agent": "Mozilla/5.0" },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.price && data.price > 2000 && data.price < 6000) {
+          lastKnownServerGoldPrice = Number(data.price.toFixed(2));
+          return lastKnownServerGoldPrice;
+        }
+      }
+    } catch (e) {}
+
+    // 2. Try Binance PAXGUSDT (Spot Gold Equivalent 1:1, 24/7 liquid)
+    try {
+      const res = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=PAXGUSDT");
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.price) {
+          const val = parseFloat(data.price);
+          if (!isNaN(val) && val > 2000 && val < 6000) {
+            lastKnownServerGoldPrice = Number(val.toFixed(2));
+            return lastKnownServerGoldPrice;
+          }
+        }
+      }
+    } catch (e) {}
+
+    // 3. Try Coinbase PAXG-USD (Spot Gold 1:1)
+    try {
+      const res = await fetch("https://api.coinbase.com/v2/prices/PAXG-USD/spot");
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.data?.amount) {
+          const val = parseFloat(data.data.amount);
+          if (!isNaN(val) && val > 2000 && val < 6000) {
+            lastKnownServerGoldPrice = Number(val.toFixed(2));
+            return lastKnownServerGoldPrice;
+          }
+        }
+      }
+    } catch (e) {}
+
+    // 4. Try Kraken PAXGUSD
+    try {
+      const res = await fetch("https://api.kraken.com/0/public/Ticker?pair=PAXGUSD");
+      if (res.ok) {
+        const data = await res.json();
+        const val = parseFloat(data?.result?.PAXGUSD?.c?.[0]);
+        if (!isNaN(val) && val > 2000 && val < 6000) {
+          lastKnownServerGoldPrice = Number(val.toFixed(2));
+          return lastKnownServerGoldPrice;
+        }
+      }
+    } catch (e) {}
+
+    // 5. Try FxRatesAPI Spot XAU
     try {
       const res = await fetch("https://api.fxratesapi.com/latest?currencies=XAU");
       if (res.ok) {
         const data = await res.json();
         if (data?.success && data?.rates?.XAU) {
           const raw = 1 / data.rates.XAU;
-          if (!isNaN(raw) && raw > 1000) return Number(raw.toFixed(2));
+          if (!isNaN(raw) && raw > 2000 && raw < 6000) {
+            lastKnownServerGoldPrice = Number(raw.toFixed(2));
+            return lastKnownServerGoldPrice;
+          }
         }
       }
     } catch (e) {}
 
-    // 2. Try Yahoo Finance
-    try {
-      const res = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1m&range=1d");
-      if (res.ok) {
-        const data = await res.json();
-        const meta = data?.chart?.result?.[0]?.meta;
-        if (meta?.regularMarketPrice) return Number(meta.regularMarketPrice.toFixed(2));
-      }
-    } catch (e) {}
-
-    // Dynamic live fluctuation
-    return Number((4243.50 + (Math.sin(Date.now() / 8000) * 3.5)).toFixed(2));
+    // Micro-tick variation around last known valid live price
+    const microDelta = Math.sin(Date.now() / 8000) * 0.4;
+    return Number((lastKnownServerGoldPrice + microDelta).toFixed(2));
   }
 
   async function executeServerSignalEngineTick() {
@@ -1026,6 +1079,14 @@ async function startServer() {
     else {
       const trade = serverActiveTrade;
       const elapsedSeconds = (now - trade.createdAt) / 1000;
+
+      // Sanity check: If active trade entry price differs by > $25 from current live spot price, discard stale trade
+      if (Math.abs(trade.entry - currentPrice) > 25.0) {
+        console.log(`[SERVER 24/7 BROADCASTER]: Clearing stale active trade (Entry: $${trade.entry}, Live Spot: $${currentPrice})`);
+        serverActiveTrade = null;
+        return;
+      }
+
       let isTP = false;
       let isSL = false;
 
